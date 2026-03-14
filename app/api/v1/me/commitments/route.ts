@@ -39,13 +39,26 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch commitments' }, { status: 500 });
     }
 
-    const list = (data || []).map((c: Record<string, unknown> & { campuses?: { name?: string } | null; phone?: string; status?: string }) => ({
+    type Row = {
+      id: string;
+      full_name: string;
+      phone: string | null;
+      amount_committed: number;
+      status: string;
+      committed_at: string;
+      utr_submitted_at: string | null;
+      verified_at: string | null;
+      rejection_reason: string | null;
+      campuses: { name?: string; district?: string } | null;
+    };
+    const rows: Row[] = Array.isArray(data) ? (data as Row[]) : [];
+    const list = rows.map((c) => ({
       commitment_id: c.id,
       full_name: c.full_name,
-      phone_masked: c.phone ? `****${(c.phone as string).slice(-4)}` : null,
+      phone_masked: c.phone ? `****${c.phone.slice(-4)}` : null,
       amount_committed: c.amount_committed,
       status: c.status,
-      campus_name: (c.campuses as { name?: string } | null)?.name,
+      campus_name: c.campuses?.name ?? null,
       committed_at: c.committed_at,
       utr_submitted_at: c.utr_submitted_at,
       verified_at: c.verified_at,

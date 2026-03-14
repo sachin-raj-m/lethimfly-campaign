@@ -8,6 +8,7 @@ import { CampusScore } from '@/types';
 interface CommitmentAdminView {
   id: string;
   full_name: string;
+  email?: string | null;
   phone: string;
   amount_committed: number;
   status: string;
@@ -41,6 +42,9 @@ export default function AdminDashboard() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [screenshotModal, setScreenshotModal] = useState<string | null>(null);
+  const [detailCommitment, setDetailCommitment] = useState<CommitmentAdminView | null>(null);
+  const [adminUtr, setAdminUtr] = useState('');
+  const [submittingUtr, setSubmittingUtr] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
   // Stats
@@ -53,6 +57,19 @@ export default function AdminDashboard() {
   const [creatingCampus, setCreatingCampus] = useState(false);
   const [uploadingCsv, setUploadingCsv] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Payment / campaign settings (admin-editable)
+  const [paymentSettings, setPaymentSettings] = useState<{
+    upi_id: string;
+    qr_code_url: string;
+    account_name: string;
+    account_number: string;
+    ifsc_code: string;
+    bank_name: string;
+    screenshot_mandatory: boolean;
+  } | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentSaving, setPaymentSaving] = useState(false);
 
   const showToast = (message: string, type = 'success') => {
     setToast({ message, type });
@@ -116,12 +133,11 @@ export default function AdminDashboard() {
   const fetchCampuses = useCallback(async () => {
     setCampusLoading(true);
     try {
-      const res = await fetch('/api/v1/campuses?search=&limit=500'); // Assuming this lists active campuses
+      const res = await fetch('/api/v1/campuses?search=&limit=500');
       const data = await res.json();
       if (Array.isArray(data)) {
         setAdminCampuses(data);
       } else {
-        console.error('Expected array of campuses, got:', data);
         setAdminCampuses([]);
       }
     } catch (err) {
@@ -132,13 +148,36 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchPaymentSettings = useCallback(async () => {
+    setPaymentLoading(true);
+    try {
+      const res = await fetch('/api/v1/campaign');
+      const data = await res.json();
+      const ai = data.account_info || {};
+      setPaymentSettings({
+        upi_id: ai.upi_id ?? '',
+        qr_code_url: ai.qr_code_url ?? '',
+        account_name: ai.account_name ?? '',
+        account_number: ai.account_number ?? '',
+        ifsc_code: ai.ifsc_code ?? '',
+        bank_name: ai.bank_name ?? '',
+        screenshot_mandatory: data.screenshot_mandatory === true,
+      });
+    } catch {
+      setPaymentSettings(null);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authed) {
       if (activeTab === 'queue' || activeTab === 'all') fetchQueue();
       if (activeTab === 'campuses') fetchCampuses();
+      if (activeTab === 'payment') fetchPaymentSettings();
       fetchStats();
     }
-  }, [authed, fetchQueue, fetchStats, activeTab, fetchCampuses]);
+  }, [authed, fetchQueue, fetchStats, activeTab, fetchCampuses, fetchPaymentSettings]);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +220,7 @@ export default function AdminDashboard() {
       clearAuthOn401(res);
       if (res.ok) {
         showToast('Commitment verified! ✅');
+        if (detailCommitment?.id === id) setDetailCommitment(null);
         fetchQueue();
         fetchStats();
       } else {
@@ -208,6 +248,7 @@ export default function AdminDashboard() {
         showToast('Commitment rejected');
         setRejectId(null);
         setRejectReason('');
+        if (detailCommitment?.id === rejectId) setDetailCommitment(null);
         fetchQueue();
         fetchStats();
       } else {
@@ -218,6 +259,36 @@ export default function AdminDashboard() {
       showToast('Network error', 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleAdminSubmitUtr = async () => {
+    if (!detailCommitment || !adminUtr.trim() || adminUtr.trim().length < 6) {
+      showToast('Enter a valid UTR (min 6 characters)', 'error');
+      return;
+    }
+    setSubmittingUtr(true);
+    try {
+      const formData = new FormData();
+      formData.append('utr_number', adminUtr.trim());
+      const res = await fetch(`/api/v1/commitments/${detailCommitment.id}/submit-utr`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('UTR submitted; status set to Pending verification');
+        setAdminUtr('');
+        setDetailCommitment({ ...detailCommitment, utr_number: adminUtr.trim(), status: 'PENDING_VERIFICATION' });
+        fetchQueue();
+        fetchStats();
+      } else {
+        showToast(data.error || 'Failed to submit UTR', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    } finally {
+      setSubmittingUtr(false);
     }
   };
 
@@ -308,6 +379,43 @@ export default function AdminDashboard() {
         if (fileInputRef.current) fileInputRef.current.value = '';
       },
     });
+  };
+
+  const handleSavePaymentSettings = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!paymentSettings) return;
+    setPaymentSaving(true);
+    try {
+      const res = await fetch('/api/v1/admin/campaign-settings', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAuthKey()}`,
+        },
+        body: JSON.stringify({
+          account_info: {
+            upi_id: paymentSettings.upi_id,
+            qr_code_url: paymentSettings.qr_code_url,
+            account_name: paymentSettings.account_name,
+            account_number: paymentSettings.account_number,
+            ifsc_code: paymentSettings.ifsc_code,
+            bank_name: paymentSettings.bank_name,
+          },
+          screenshot_mandatory: paymentSettings.screenshot_mandatory,
+        }),
+      });
+      clearAuthOn401(res);
+      if (res.ok) {
+        showToast('Payment settings saved. They will appear on the site.');
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to save', 'error');
+      }
+    } catch {
+      showToast('Network error', 'error');
+    } finally {
+      setPaymentSaving(false);
+    }
   };
 
   const handleExport = async () => {
@@ -474,6 +582,7 @@ export default function AdminDashboard() {
             { key: 'queue', label: '📋 Verification Queue' },
             { key: 'all', label: '📊 All Commitments' },
             { key: 'campuses', label: '🏫 Campuses' },
+            { key: 'payment', label: '💳 Payment' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -543,7 +652,16 @@ export default function AdminDashboard() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {commitments.map((c) => (
-                <div key={c.id} className="card" style={{ padding: 'var(--space-4)' }}>
+                <div
+                  key={c.id}
+                  className="card"
+                  style={{ padding: 'var(--space-4)', cursor: 'pointer' }}
+                  onClick={() => setDetailCommitment(c)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setDetailCommitment(c)}
+                  aria-label={`View details for ${c.full_name}`}
+                >
                   <div
                     style={{
                       display: 'flex',
@@ -620,8 +738,8 @@ export default function AdminDashboard() {
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexShrink: 0 }}>
+                    {/* Actions - stop propagation so clicking doesn't open detail modal */}
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
                       {c.screenshot_url && (
                         <button
                           className="btn btn-secondary btn-sm"
@@ -834,7 +952,172 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Payment tab: UPI QR, UPI ID, bank details — populated on site */}
+        {activeTab === 'payment' && (
+          <div className="card" style={{ maxWidth: '560px' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+              💳 Payment / Campaign account
+            </h3>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
+              These details are shown on the homepage and Pay page. UTR remains mandatory; screenshot can be optional.
+            </p>
+            {paymentLoading ? (
+              <div className="skeleton" style={{ height: '320px' }} />
+            ) : paymentSettings ? (
+              <form onSubmit={handleSavePaymentSettings} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">UPI ID</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. campaign@upi"
+                    value={paymentSettings.upi_id}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, upi_id: e.target.value })}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">UPI QR image URL</label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://... or Supabase storage URL"
+                    value={paymentSettings.qr_code_url}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, qr_code_url: e.target.value })}
+                  />
+                  <span className="form-hint">Optional. Image URL for UPI QR code (shown on site).</span>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Account name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Beneficiary name"
+                    value={paymentSettings.account_name}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, account_name: e.target.value })}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Account number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Bank account number"
+                    value={paymentSettings.account_number}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, account_number: e.target.value })}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">IFSC code</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. SBIN0001234"
+                    value={paymentSettings.ifsc_code}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, ifsc_code: e.target.value })}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Bank name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. State Bank of India"
+                    value={paymentSettings.bank_name}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, bank_name: e.target.value })}
+                  />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                  <input
+                    type="checkbox"
+                    checked={paymentSettings.screenshot_mandatory}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, screenshot_mandatory: e.target.checked })}
+                  />
+                  Require payment screenshot when submitting UTR
+                </label>
+                <button type="submit" className="btn btn-primary" disabled={paymentSaving}>
+                  {paymentSaving ? 'Saving...' : 'Save payment settings'}
+                </button>
+              </form>
+            ) : (
+              <p style={{ color: 'var(--text-muted)' }}>Could not load settings.</p>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Commitment Detail Modal */}
+      {detailCommitment && (
+        <div className="modal-overlay" onClick={() => { setDetailCommitment(null); setAdminUtr(''); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-4)' }}>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Commitment details</h3>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setDetailCommitment(null); setAdminUtr(''); }} aria-label="Close">✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+              <div><span style={{ color: 'var(--text-muted)' }}>ID</span><br /><code style={{ fontSize: 'var(--text-xs)' }}>{detailCommitment.id}</code></div>
+              <div><span style={{ color: 'var(--text-muted)' }}>Name</span><br /><strong>{detailCommitment.full_name}</strong></div>
+              {detailCommitment.email != null && detailCommitment.email !== '' && (
+                <div><span style={{ color: 'var(--text-muted)' }}>Email</span><br />{detailCommitment.email}</div>
+              )}
+              <div><span style={{ color: 'var(--text-muted)' }}>Phone</span><br />****{detailCommitment.phone?.slice(-4)}</div>
+              <div><span style={{ color: 'var(--text-muted)' }}>Amount</span><br /><strong style={{ color: 'var(--accent-gold)' }}>₹{detailCommitment.amount_committed}</strong></div>
+              <div><span style={{ color: 'var(--text-muted)' }}>Campus</span><br />{detailCommitment.campuses?.name}{detailCommitment.campuses?.district ? `, ${detailCommitment.campuses.district}` : ''}</div>
+              <div><span style={{ color: 'var(--text-muted)' }}>Status</span><br /><span className={`status-badge status-${detailCommitment.status}`}>{detailCommitment.status.replace(/_/g, ' ')}</span></div>
+              <div><span style={{ color: 'var(--text-muted)' }}>Committed at</span><br />{new Date(detailCommitment.committed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+              <div><span style={{ color: 'var(--text-muted)' }}>UTR</span><br />{detailCommitment.utr_number ? <code>{detailCommitment.utr_number}</code> : '—'}</div>
+              {detailCommitment.utr_submitted_at && <div><span style={{ color: 'var(--text-muted)' }}>UTR submitted at</span><br />{new Date(detailCommitment.utr_submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>}
+              {detailCommitment.verified_at && <div><span style={{ color: 'var(--text-muted)' }}>Verified at</span><br />{new Date(detailCommitment.verified_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>}
+              {detailCommitment.rejection_reason && <div><span style={{ color: 'var(--text-muted)' }}>Rejection reason</span><br /><span style={{ color: 'var(--accent-red)' }}>{detailCommitment.rejection_reason}</span></div>}
+              {detailCommitment.screenshot_url && (
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Screenshot</span><br />
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setScreenshotModal(detailCommitment.screenshot_url!); setDetailCommitment(null); }}>🖼️ View file</button>
+                </div>
+              )}
+            </div>
+            {/* Admin set UTR when no UTR and status allows resubmit */}
+            {(detailCommitment.status === 'COMMITTED' || detailCommitment.status === 'REJECTED') && !detailCommitment.utr_number && (
+              <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-color)' }}>
+                <label className="form-label">Add UTR (on behalf of user)</label>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', marginTop: 'var(--space-2)' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="UTR / transaction reference (min 6 chars)"
+                    value={adminUtr}
+                    onChange={(e) => setAdminUtr(e.target.value)}
+                    minLength={6}
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" className="btn btn-primary btn-sm" onClick={handleAdminSubmitUtr} disabled={submittingUtr || adminUtr.trim().length < 6}>
+                    {submittingUtr ? '...' : 'Submit UTR'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {/* Verify / Reject */}
+            {(detailCommitment.status === 'PENDING_VERIFICATION' || detailCommitment.status === 'FLAGGED') && (
+              <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-color)' }}>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => { setRejectId(detailCommitment.id); setDetailCommitment(null); }}
+                  disabled={actionLoading === detailCommitment.id}
+                >
+                  ✕ Reject
+                </button>
+                <button
+                  className="btn btn-success btn-sm"
+                  onClick={() => handleVerify(detailCommitment.id)}
+                  disabled={actionLoading === detailCommitment.id}
+                >
+                  {actionLoading === detailCommitment.id ? '...' : '✓ Verify'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Reject Modal */}
       {rejectId && (
