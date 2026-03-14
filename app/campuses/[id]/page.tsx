@@ -5,10 +5,10 @@ import { CampusScore } from '@/types';
 async function getCampusData(id: string): Promise<CampusScore | null> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const res = await fetch(`${baseUrl}/api/v1/campuses`, { next: { revalidate: 30 } });
+    const res = await fetch(`${baseUrl}/api/v1/campuses/${id}`, { next: { revalidate: 30 } });
     if (!res.ok) return null;
-    const campuses: CampusScore[] = await res.json();
-    return (campuses || []).find((c) => c.campus_id === id) || null;
+    const campus: CampusScore = await res.json();
+    return campus || null;
   } catch {
     return null;
   }
@@ -19,6 +19,7 @@ interface CampusCommitment {
   full_name: string;
   amount_committed: number;
   created_at: string;
+  user_hash: string;
 }
 
 async function getCampusCommitments(id: string): Promise<CampusCommitment[]> {
@@ -70,8 +71,20 @@ export default async function CampusDetailPage({
   const tierInfo = tierThresholds[campus.tier || 'E'] || { next: null, need: null };
   const toNextTier = tierInfo.need ? tierInfo.need - (campus.verified_contributors || 0) : null;
 
-  // Compute top committers
-  const sortedByAmount = [...commitments].sort((a, b) => b.amount_committed - a.amount_committed);
+  // Compute top committers (consolidated by user_hash)
+  const groupedCommitments = commitments.reduce((acc, curr) => {
+    const hash = curr.user_hash;
+    if (!acc[hash]) {
+      acc[hash] = { ...curr };
+    } else {
+      acc[hash].amount_committed += curr.amount_committed;
+      // Keep the most recent name, or whichever you prefer
+    }
+    return acc;
+  }, {} as Record<string, CampusCommitment>);
+
+  const consolidatedList = Object.values(groupedCommitments);
+  const sortedByAmount = consolidatedList.sort((a, b) => b.amount_committed - a.amount_committed);
   const topCommitters = sortedByAmount.slice(0, 5);
 
   return (
@@ -115,6 +128,10 @@ export default async function CampusDetailPage({
 
         {/* Stats Grid */}
         <div className="metrics-strip" style={{ paddingTop: 'var(--space-6)', paddingBottom: 0 }}>
+          <div className="metric-card">
+            <div className="metric-value">{campus.total_commitments ?? 0}</div>
+            <div className="metric-label">Total Commitments</div>
+          </div>
           <div className="metric-card">
             <div className="metric-value green">{campus.verified_contributors || 0}</div>
             <div className="metric-label">Verified</div>

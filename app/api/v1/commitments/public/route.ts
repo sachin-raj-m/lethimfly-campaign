@@ -26,7 +26,7 @@ export async function GET() {
     }
 
     // Format the response
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const formattedData = commitments.map((c: any) => ({
       id: c.id,
       full_name: c.full_name,

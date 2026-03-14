@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, Suspense, FormEvent, DragEvent } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CampaignInfo } from '@/types';
+import { createClient } from '@/lib/supabase/client';
 
 function PayContent() {
   const searchParams = useSearchParams();
@@ -160,11 +162,11 @@ function PayContent() {
 
       {!commitmentId && (
         <div className="card" style={{ marginBottom: 'var(--space-6)', borderColor: 'var(--accent-red)' }}>
-          <p style={{ color: 'var(--accent-red)', fontSize: 'var(--text-sm)' }}>
-            ⚠️ No commitment ID found.{' '}
-            <a href="/campuses" style={{ textDecoration: 'underline' }}>
-              Please commit first
-            </a>
+          <p style={{ color: 'var(--accent-gold)', fontSize: 'var(--text-sm)' }}>
+            ⚠️ Cannot find pending commitment.{' '}
+            <Link href="/campuses" style={{ textDecoration: 'underline' }}>
+              Return to campuses
+            </Link>
           </p>
         </div>
       )}
