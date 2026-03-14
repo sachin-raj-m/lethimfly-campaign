@@ -5,7 +5,7 @@ import { validateAdminKey } from '@/lib/auth/adminKey';
 /**
  * PATCH /api/v1/admin/campaign-settings
  * Admin-only. Updates campaign_settings (id=1): account_info and/or screenshot_mandatory.
- * Body: { account_info?: { upi_id?, qr_code_url?, account_name?, account_number?, ifsc_code?, bank_name? }, screenshot_mandatory?: boolean }
+ * Body: { account_info?: {...}, screenshot_mandatory?: boolean, one_verified_per_phone?: boolean }
  */
 export async function PATCH(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: current } = await supabase
       .from('campaign_settings')
-      .select('account_info, screenshot_mandatory')
+      .select('account_info, screenshot_mandatory, one_verified_per_phone')
       .eq('id', 1)
       .single();
 
@@ -29,6 +29,10 @@ export async function PATCH(request: NextRequest) {
 
     if (typeof body.screenshot_mandatory === 'boolean') {
       updates.screenshot_mandatory = body.screenshot_mandatory;
+    }
+
+    if (typeof body.one_verified_per_phone === 'boolean') {
+      updates.one_verified_per_phone = body.one_verified_per_phone;
     }
 
     if (body.account_info && typeof body.account_info === 'object') {

@@ -48,7 +48,13 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
   // Stats
-  const [stats, setStats] = useState({ pending: 0, verified: 0, total: 0, totalCommitted: 0 });
+  const [stats, setStats] = useState({
+    pending: 0,
+    verified: 0,
+    total: 0,
+    totalCommitted: 0,
+    totalAmountCommitted: 0,
+  });
 
   // Campuses state
   const [adminCampuses, setAdminCampuses] = useState<CampusScore[]>([]);
@@ -67,9 +73,20 @@ export default function AdminDashboard() {
     ifsc_code: string;
     bank_name: string;
     screenshot_mandatory: boolean;
+    one_verified_per_phone: boolean;
   } | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
+
+  // Detailed stats (district, type, campus, status)
+  const [detailedStats, setDetailedStats] = useState<{
+    summary: { total_commitments: number; total_amount_committed: number; verified_count: number; verified_amount: number; pending_count: number };
+    by_district: { district: string; total_commitments: number; total_amount: number; verified_count: number; verified_amount: number }[];
+    by_type: { campus_type: string; total_commitments: number; total_amount: number; verified_count: number; verified_amount: number }[];
+    by_campus: { campus_id: string; campus_name: string; district: string; campus_type: string; total_commitments: number; total_amount_committed: number; verified_contributors: number; verified_amount_total: number }[];
+    by_status: { status: string; count: number }[];
+  } | null>(null);
+  const [detailedStatsLoading, setDetailedStatsLoading] = useState(false);
 
   const showToast = (message: string, type = 'success') => {
     setToast({ message, type });
@@ -121,12 +138,13 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/v1/campaign');
       const data = await res.json();
-      setStats({
-        pending: data.pending_verification_total || 0,
-        verified: data.verified_contributors_total || 0,
-        total: data.verified_amount_total || 0,
-        totalCommitted: data.total_commitments_total || 0,
-      });
+        setStats({
+          pending: data.pending_verification_total || 0,
+          verified: data.verified_contributors_total || 0,
+          total: data.verified_amount_total || 0,
+          totalCommitted: data.total_commitments_total || 0,
+          totalAmountCommitted: data.total_amount_committed || 0,
+        });
     } catch {}
   }, []);
 
@@ -162,6 +180,7 @@ export default function AdminDashboard() {
         ifsc_code: ai.ifsc_code ?? '',
         bank_name: ai.bank_name ?? '',
         screenshot_mandatory: data.screenshot_mandatory === true,
+        one_verified_per_phone: data.one_verified_per_phone === true,
       });
     } catch {
       setPaymentSettings(null);
@@ -170,14 +189,35 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchDetailedStats = useCallback(async () => {
+    setDetailedStatsLoading(true);
+    try {
+      const res = await fetch('/api/v1/admin/stats/detailed', {
+        headers: { Authorization: `Bearer ${getAuthKey()}` },
+      });
+      clearAuthOn401(res);
+      if (res.ok) {
+        const data = await res.json();
+        setDetailedStats(data);
+      } else {
+        setDetailedStats(null);
+      }
+    } catch {
+      setDetailedStats(null);
+    } finally {
+      setDetailedStatsLoading(false);
+    }
+  }, [clearAuthOn401]);
+
   useEffect(() => {
     if (authed) {
       if (activeTab === 'queue' || activeTab === 'all') fetchQueue();
       if (activeTab === 'campuses') fetchCampuses();
       if (activeTab === 'payment') fetchPaymentSettings();
+      if (activeTab === 'stats') fetchDetailedStats();
       fetchStats();
     }
-  }, [authed, fetchQueue, fetchStats, activeTab, fetchCampuses, fetchPaymentSettings]);
+  }, [authed, fetchQueue, fetchStats, activeTab, fetchCampuses, fetchPaymentSettings, fetchDetailedStats]);
 
   useEffect(() => {
     let cancelled = false;
@@ -402,6 +442,7 @@ export default function AdminDashboard() {
             bank_name: paymentSettings.bank_name,
           },
           screenshot_mandatory: paymentSettings.screenshot_mandatory,
+          one_verified_per_phone: paymentSettings.one_verified_per_phone,
         }),
       });
       clearAuthOn401(res);
@@ -542,27 +583,41 @@ export default function AdminDashboard() {
       </div>
 
       <div className="container" style={{ paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-16)' }}>
-        {/* Stats Cards */}
-        <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 'var(--space-6)' }}>
-          <div className="metric-card">
-            <div className="metric-value blue">{stats.totalCommitted}</div>
-            <div className="metric-label">Total users committed</div>
+        {/* Stats: Commitments vs Verified — separate sections */}
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Commitments
           </div>
-          <div className="metric-card">
-            <div className="metric-value pink">{stats.pending}</div>
-            <div className="metric-label">Pending verification</div>
+          <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 'var(--space-3)' }}>
+            <div className="metric-card">
+              <div className="metric-value blue">{stats.totalCommitted}</div>
+              <div className="metric-label">Users committed</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value gold">₹{stats.totalAmountCommitted.toLocaleString()}</div>
+              <div className="metric-label">Total committed (₹)</div>
+            </div>
           </div>
-          <div className="metric-card">
-            <div className="metric-value green">{stats.verified}</div>
-            <div className="metric-label">Verified</div>
+          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 'var(--space-4)' }}>
+            Verification
           </div>
-          <div className="metric-card">
-            <div className="metric-value gold">₹{stats.total.toLocaleString()}</div>
-            <div className="metric-label">Total raised (₹)</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-value">{total}</div>
-            <div className="metric-label">In current queue</div>
+          <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 0 }}>
+            <div className="metric-card">
+              <div className="metric-value pink">{stats.pending}</div>
+              <div className="metric-label">Pending verification</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value green">{stats.verified}</div>
+              <div className="metric-label">Verified</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value gold">₹{stats.total.toLocaleString()}</div>
+              <div className="metric-label">Total raised (₹)</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value">{total}</div>
+              <div className="metric-label">In current queue</div>
+            </div>
           </div>
         </div>
 
@@ -581,6 +636,7 @@ export default function AdminDashboard() {
           {[
             { key: 'queue', label: '📋 Verification Queue' },
             { key: 'all', label: '📊 All Commitments' },
+            { key: 'stats', label: '📈 Stats' },
             { key: 'campuses', label: '🏫 Campuses' },
             { key: 'payment', label: '💳 Payment' },
           ].map((tab) => (
@@ -812,6 +868,156 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {/* Detailed Stats Tab */}
+        {activeTab === 'stats' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>📈 Detailed stats</h3>
+            {detailedStatsLoading ? (
+              <div className="skeleton" style={{ height: '400px' }} />
+            ) : detailedStats ? (
+              <>
+                <div className="card">
+                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>Summary</h4>
+                  <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 0 }}>
+                    <div className="metric-card">
+                      <div className="metric-value blue">{detailedStats.summary.total_commitments}</div>
+                      <div className="metric-label">Total commitments</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-value gold">₹{detailedStats.summary.total_amount_committed.toLocaleString()}</div>
+                      <div className="metric-label">Total committed (₹)</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-value green">{detailedStats.summary.verified_count}</div>
+                      <div className="metric-label">Verified</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-value gold">₹{detailedStats.summary.verified_amount.toLocaleString()}</div>
+                      <div className="metric-label">Verified amount (₹)</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-value pink">{detailedStats.summary.pending_count}</div>
+                      <div className="metric-label">Pending verification</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By district</h4>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                          <th style={{ padding: 'var(--space-2)' }}>District</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Commitments</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Amount (₹)</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Verified</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Verified (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailedStats.by_district.map((row) => (
+                          <tr key={row.district || '(blank)'} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.district || '(blank)'}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.total_commitments}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>₹{row.total_amount.toLocaleString()}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.verified_count}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>₹{row.verified_amount.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By organisation type</h4>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                          <th style={{ padding: 'var(--space-2)' }}>Type</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Commitments</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Amount (₹)</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Verified</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Verified (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailedStats.by_type.map((row) => (
+                          <tr key={row.campus_type} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: 'var(--space-2)', textTransform: 'capitalize' }}>{row.campus_type}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.total_commitments}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>₹{row.total_amount.toLocaleString()}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.verified_count}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>₹{row.verified_amount.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By campus</h4>
+                  <div style={{ overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+                      <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                          <th style={{ padding: 'var(--space-2)' }}>Campus</th>
+                          <th style={{ padding: 'var(--space-2)' }}>District</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Type</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Commitments</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Amount (₹)</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Verified</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Verified (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailedStats.by_campus.map((row) => (
+                          <tr key={row.campus_id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.campus_name}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.district}</td>
+                            <td style={{ padding: 'var(--space-2)', textTransform: 'capitalize' }}>{row.campus_type}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.total_commitments}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>₹{(row.total_amount_committed || 0).toLocaleString()}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.verified_contributors ?? 0}</td>
+                            <td style={{ padding: 'var(--space-2)' }}>₹{(row.verified_amount_total || 0).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By status</h4>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                          <th style={{ padding: 'var(--space-2)' }}>Status</th>
+                          <th style={{ padding: 'var(--space-2)' }}>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailedStats.by_status.map((row) => (
+                          <tr key={row.status} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: 'var(--space-2)' }}><span className={`status-badge status-${row.status}`}>{row.status.replace(/_/g, ' ')}</span></td>
+                            <td style={{ padding: 'var(--space-2)' }}>{row.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-muted)' }}>Could not load stats.</p>
+            )}
+          </div>
+        )}
+
         {/* Campuses Tab */}
         {activeTab === 'campuses' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-8)' }}>
@@ -1034,6 +1240,14 @@ export default function AdminDashboard() {
                     onChange={(e) => setPaymentSettings({ ...paymentSettings, screenshot_mandatory: e.target.checked })}
                   />
                   Require payment screenshot when submitting UTR
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                  <input
+                    type="checkbox"
+                    checked={paymentSettings.one_verified_per_phone}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, one_verified_per_phone: e.target.checked })}
+                  />
+                  Limit to one commitment per phone number (uncheck to allow multiple commitments &amp; payments)
                 </label>
                 <button type="submit" className="btn btn-primary" disabled={paymentSaving}>
                   {paymentSaving ? 'Saving...' : 'Save payment settings'}
