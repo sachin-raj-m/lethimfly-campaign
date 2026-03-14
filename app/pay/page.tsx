@@ -71,7 +71,8 @@ function PayContent() {
       setError('Please enter a valid UTR/Transaction reference (min 6 characters)');
       return;
     }
-    if (!screenshot) {
+    const screenshotRequired = campaignInfo?.screenshot_mandatory === true;
+    if (screenshotRequired && !screenshot) {
       setError('Please upload a screenshot of your payment');
       return;
     }
@@ -80,7 +81,7 @@ function PayContent() {
     try {
       const formData = new FormData();
       formData.append('utr_number', utr.trim());
-      formData.append('screenshot_file', screenshot);
+      if (screenshot) formData.append('screenshot_file', screenshot);
 
       const res = await fetch(`/api/v1/commitments/${commitmentId}/submit-utr`, {
         method: 'POST',
@@ -230,6 +231,17 @@ function PayContent() {
               <span className="account-row-value">{campaignInfo.account_info.bank_name}</span>
             </div>
           )}
+          {campaignInfo?.account_info?.qr_code_url && (
+            <div className="account-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+              <span className="account-row-label">UPI QR</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={campaignInfo.account_info.qr_code_url}
+                alt="UPI QR Code"
+                style={{ maxWidth: '200px', height: 'auto', borderRadius: 'var(--radius-md)' }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -256,7 +268,9 @@ function PayContent() {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Payment Screenshot *</label>
+          <label className="form-label">
+            Payment Screenshot {campaignInfo?.screenshot_mandatory ? '*' : '(optional)'}
+          </label>
           <div
             className={`upload-area ${dragOver ? 'drag-over' : ''}`}
             onDragOver={(e) => {

@@ -432,6 +432,17 @@ export default async function Home() {
                   </button>
                 </span>
               </div>
+              {campaign?.account_info?.qr_code_url && (
+                <div className="account-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span className="account-row-label">UPI QR</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={campaign.account_info.qr_code_url}
+                    alt="UPI QR Code"
+                    style={{ maxWidth: '200px', height: 'auto', borderRadius: 'var(--radius-md)' }}
+                  />
+                </div>
+              )}
             </div>
 
             <p

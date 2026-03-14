@@ -50,6 +50,7 @@ export async function GET() {
       leaderboard_mode: settings.leaderboard_mode,
       account_info: settings.account_info,
       show_pending_publicly: settings.show_pending_publicly,
+      screenshot_mandatory: settings.screenshot_mandatory ?? false,
     });
   } catch (error) {
     console.error('Campaign API error:', error);
