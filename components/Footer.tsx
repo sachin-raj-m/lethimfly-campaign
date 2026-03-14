@@ -13,7 +13,7 @@ export default function Footer() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-8)' }}>
           {/* Contact */}
           <div>
-            <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>
               Contact
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
@@ -28,10 +28,10 @@ export default function Footer() {
 
           {/* Address */}
           <div>
-            <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>
               Address
             </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', color: '#000', fontWeight: 500, lineHeight: 1.4, fontSize: 'var(--text-sm)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', color: '#000', fontWeight: 500, lineHeight: 1.5, fontSize: 'var(--text-sm)' }}>
               <span>Sandhya Bhavan</span>
               <span>Moongode PO, Peyad</span>
               <span>Thiruvananthapuram</span>
@@ -41,7 +41,7 @@ export default function Footer() {
 
           {/* Social */}
           <div>
-            <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+            <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>
               Social
             </h4>
             <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
@@ -57,7 +57,7 @@ export default function Footer() {
               </a>
               <a href="#" style={{ color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="WhatsApp">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766 0 1.018.265 2.012.768 2.888l-.816 2.981 3.051-.801c.854.457 1.821.698 2.765.698 3.181 0 5.768-2.586 5.769-5.766 0-3.181-2.587-5.766-5.769-5.766zm3.435 8.019c-.188.528-1.077 1.014-1.503 1.066-.376.046-.867.098-1.472-.102-.321-.106-.757-.263-1.282-.544-2.228-1.196-3.639-3.486-3.748-3.632-.109-.146-.895-1.192-.895-2.273 0-1.082.565-1.614.764-1.825.201-.212.438-.266.584-.266.146 0 .292 0 .419.007.134.007.315-.05.483.355.178.428.608 1.485.663 1.595.055.111.091.242.018.388-.073.146-.109.238-.219.349-.109.111-.228.245-.327.329-.111.096-.228.204-.103.421.125.216.556.919 1.193 1.485.819.728 1.506.953 1.716 1.049.21.096.333.08.455-.059.123-.139.531-.617.677-.828.146-.212.292-.176.483-.104.192.071 1.213.57 1.423.676.21.106.351.159.401.248.051.089.051.517-.137 1.045z" />
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                 </svg>
               </a>
             </div>
@@ -69,17 +69,18 @@ export default function Footer() {
       <div style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
         <h1
           style={{
-            fontSize: 'clamp(6rem, 15vw, 18rem)',
+            fontFamily: 'var(--font-heading)',
+            fontSize: 'clamp(3rem, 15vw, 10rem)',
             fontWeight: 900,
             color: '#000',
             lineHeight: 0.72,
             margin: 0,
             whiteSpace: 'nowrap',
-            letterSpacing: '-0.02em',
+            letterSpacing: '-0.03em',
             transform: 'translateY(12%)',
           }}
         >
-          Syam Kumar
+          LET HIM FLY
         </h1>
       </div>
     </footer>

@@ -37,259 +37,233 @@ export default async function Home() {
 
   return (
     <>
-      {/* Hero */}
-      <section
-        className="hero-section"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(58, 134, 255, 0.4), rgba(58, 134, 255, 0.1)), url('https://images.unsplash.com/photo-1521685150894-3d0d82944b15?q=80&w=2670&auto=format&fit=crop')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 20%',
-          minHeight: '85vh',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}
-      >
-        {/* Yellow corner blobs */}
-        <div
-          style={{
-            position: 'absolute',
-            top: -50,
-            left: -50,
-            width: 300,
-            height: 300,
-            background: 'var(--accent-primary)',
-            borderRadius: '50%',
-            opacity: 0.9,
-            zIndex: 0,
-          }}
-        ></div>
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 50,
-            right: -100,
-            width: 400,
-            height: 400,
-            background: 'var(--accent-primary)',
-            borderRadius: '50%',
-            opacity: 0.9,
-            zIndex: 0,
-          }}
-        ></div>
+      {/* ═══════════════════════════════════════════
+          HERO — Bento Grid with Campaign Goals
+          Headline left, goal cards right, viewport fit
+          ═══════════════════════════════════════════ */}
+      <section className="hero-bento">
+        <div className="hero-bento-inner">
+          {/* LEFT: Headline + CTA */}
+          <div className="hero-bento-text">
+            <h1 className="hero-bento-headline animate-fade-in-up">
+              Let him<br />fly.
+            </h1>
 
-        <div className="container" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-          <h2
-            style={{ fontSize: 'var(--text-4xl)', fontWeight: 600, color: '#fff', marginBottom: '-10px' }}
-            className="animate-fade-in-up"
-          >
-            Hi, I&apos;m
-          </h2>
-          <h1
-            style={{
-              fontSize: 'clamp(4rem, 8vw, 7rem)',
-              fontWeight: 800,
-              color: 'var(--accent-primary)',
-              lineHeight: 1,
-              marginBottom: 'var(--space-6)',
-              textShadow: '0 4px 20px rgba(0,0,0,0.3)',
-            }}
-            className="animate-fade-in-up"
-          >
-            Syam Kumar
-          </h1>
+            <p className="hero-bento-desc animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              Support Syam Kumar — from 16 surgeries to the edge of a world record. Commit ₹100 to help him represent India.
+            </p>
 
-          <p
-            style={{
-              fontSize: 'var(--text-lg)',
-              color: '#fff',
-              maxWidth: '800px',
-              margin: '0 auto var(--space-8)',
-              lineHeight: 1.6,
-              fontWeight: 500,
-              textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-              animationDelay: '0.1s',
-            }}
-            className="animate-fade-in-up"
-          >
-            From 16 surgeries to setting a world record — support Syam Kumar in becoming the first
-            person without a leg to skydive from 45,000 feet and fly as a wingsuit pilot.
-          </p>
-
-          <div
-            className="animate-fade-in-up"
-            style={{ animationDelay: '0.2s', marginBottom: 'var(--space-12)' }}
-          >
-            <Link
-              href="?commit=true"
-              scroll={false}
-              className="btn btn-primary btn-lg"
-              style={{
-                borderRadius: '9999px',
-                padding: '1rem 2.5rem',
-                fontSize: '1.125rem',
-                boxShadow: '0 10px 25px rgba(250, 204, 21, 0.4)',
-              }}
-            >
-              Fund my dream
-            </Link>
+            <div className="hero-bento-cta-row animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+              <Link href="?commit=true" scroll={false} className="hero-bento-cta">
+                Fund his dream
+                <span className="hero-bento-cta-arrow">→</span>
+              </Link>
+              <div className="hero-bento-avatars">
+                <div className="hero-avatar" style={{ background: 'var(--accent-primary)' }}>S</div>
+                <div className="hero-avatar" style={{ background: '#111', color: '#fff' }}>K</div>
+                <div className="hero-avatar" style={{ background: '#e8e4de' }}>M</div>
+                <span className="hero-avatar-count">+728</span>
+              </div>
+            </div>
           </div>
 
-          <div
-            style={{
-              fontFamily: 'var(--font-hand)',
-              fontSize: 'clamp(3rem, 6vw, 6rem)',
-              color: 'var(--accent-primary)',
-              transform: 'rotate(-2deg)',
-              textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-              animationDelay: '0.3s',
-            }}
-            className="animate-fade-in-up"
-          >
-            A Life Above Limits
+          {/* RIGHT: Bento card grid */}
+          <div className="hero-bento-grid">
+            {/* Card 1: Large image card */}
+            <div className="hero-goal-card hero-goal-tall hero-goal-image">
+              <img
+                src="https://images.unsplash.com/photo-1521685150894-3d0d82944b15?q=80&w=600&auto=format&fit=crop"
+                alt="Syam Kumar"
+                className="hero-goal-img"
+              />
+              <div className="hero-goal-img-label">
+                <span>Syam Kumar</span>
+                <small>Para Skydiver</small>
+              </div>
+            </div>
+
+            {/* Card 2: Goal text card — yellow */}
+            <div className="hero-goal-card hero-goal-yellow">
+              <h3>45,000 ft</h3>
+              <p>World record skydive attempt — higher than any para athlete has ever jumped.</p>
+            </div>
+
+            {/* Card 3: Image card — person */}
+            <div className="hero-goal-card hero-goal-peach">
+              <img
+                src="https://images.unsplash.com/photo-1544485351-46abcc7bfbf8?q=80&w=400&auto=format&fit=crop"
+                alt="Wingsuit Flying"
+                className="hero-goal-img"
+              />
+              <div className="hero-goal-img-label">
+                <span>Wingsuit</span>
+                <small>Pilot Training</small>
+              </div>
+            </div>
+
+            {/* Card 4: Goal text card — light */}
+            <div className="hero-goal-card hero-goal-light">
+              <h3>Represent India</h3>
+              <p>At the 2026 International Indoor Para Skydiving Championship. Be part of history.</p>
+            </div>
+
+            {/* Card 5: Image card */}
+            <div className="hero-goal-card hero-goal-image">
+              <img
+                src="https://images.unsplash.com/photo-1474623809196-26c1d33457cc?q=80&w=400&auto=format&fit=crop"
+                alt="Skydiving"
+                className="hero-goal-img"
+              />
+              <div className="hero-goal-img-label">
+                <span>16 Surgeries</span>
+                <small>Zero Limits</small>
+              </div>
+            </div>
+
+            {/* Card 6: Goal text — dark */}
+            <div className="hero-goal-card hero-goal-dark">
+              <p style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4 }}>
+                100% of your ₹100 goes directly to the campaign. No middlemen.
+              </p>
+            </div>
           </div>
+        </div>
+
+        {/* Trust line at bottom */}
+        <div className="hero-trust-line animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
+          Join 700+ contributors trusting #LetHimFly to support Syam&apos;s dream.
         </div>
       </section>
 
-      {/* Intro & Stats Section */}
-      <section className="section" style={{ background: '#fff', position: 'relative', zIndex: 2 }}>
-        <div
-          className="container"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: 'var(--space-8)',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
-            {/* Desktop Layout Grid */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 'var(--space-8)',
-              }}
-            >
-              {/* Left Column: Stats */}
-              <div
-                style={{
-                  flex: '1',
-                  minWidth: '280px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-3)',
-                  fontSize: 'var(--text-xl)',
-                  fontWeight: 500,
-                }}
-              >
-                <div>
-                  <span style={{ color: 'var(--accent-primary)' }}>16</span> Surgeries
-                </div>
-                <div>
-                  <span style={{ color: 'var(--accent-primary)' }}>100+</span> Solo Skydiving
-                </div>
-                <div>
-                  <span style={{ color: 'var(--accent-primary)' }}>42000ft</span> Wingsuit Flying
-                </div>
-                <div>Tom Cruise Cliff Jump</div>
+      {/* ═══════════════════════════════════════════
+          JOURNEY / STATS — Bento Grid Layout
+          Large headline wrapping around cards
+          ═══════════════════════════════════════════ */}
+      <section className="section" style={{ background: '#fff' }}>
+        <div className="container">
+          <span className="section-label">— THE STORY</span>
 
-                <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-                  <Link
-                    href="?commit=true"
-                    scroll={false}
-                    className="btn btn-primary"
-                    style={{ borderRadius: '9999px' }}
-                  >
-                    Fund my dream
-                  </Link>
-                  <Link
-                    href="#how-it-works"
-                    className="btn btn-secondary"
-                    style={{ borderRadius: '9999px' }}
-                  >
-                    View all records
-                  </Link>
-                </div>
-              </div>
+          <div className="journey-bento">
+            {/* Row 1: Headline area + Dark image card */}
+            <div className="journey-bento-headline reveal">
+              <h2>
+                WITNESS THE{' '}
+                <span className="journey-bento-headline-journey">JOURNEY</span>{' '}
+                <span className="journey-pill-inline">
+                  <span>From</span>
+                </span>{' '}
+                BIOLOGICAL MUTINY TO{' '}
+                <span style={{ color: 'var(--accent-primary)' }}>SKY MASTERY</span>
+              </h2>
+            </div>
 
-              {/* Center Column: Image (Placeholder logic) */}
-              <div
-                style={{
-                  flex: '1',
-                  minWidth: '300px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  position: 'relative',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    width: '80%',
-                    height: '110%',
-                    background: 'var(--accent-primary)',
-                    clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)',
-                    zIndex: 0,
-                    opacity: 0.8,
-                    transform: 'rotate(5deg)',
-                  }}
-                ></div>
-                <img
-                  src="https://images.unsplash.com/photo-1544485351-46abcc7bfbf8?q=80&w=800&auto=format&fit=crop"
-                  alt="Syam Kumar Profile"
-                  style={{
-                    position: 'relative',
-                    zIndex: 1,
-                    maxWidth: '100%',
-                    height: '400px',
-                    objectFit: 'cover',
-                    borderRadius: '10px',
-                  }}
-                />
-              </div>
+            {/* Dark image card — top right */}
+            <div className="journey-bento-image-card reveal reveal-delay-1">
+              <span className="journey-bento-image-label">The Story</span>
+              <div className="journey-bento-star">✦</div>
+              <img
+                src="https://images.unsplash.com/photo-1544485351-46abcc7bfbf8?q=80&w=800&auto=format&fit=crop"
+                alt="Syam Kumar Profile"
+                className="journey-bento-img"
+              />
+              <p className="journey-bento-image-desc">
+                From 16 surgeries to setting a world record. The story of relentless determination.
+              </p>
+            </div>
 
-              {/* Right Column: Headline */}
-              <div style={{ flex: '1', minWidth: '300px' }}>
-                <h2
-                  style={{
-                    fontSize: 'clamp(2rem, 4vw, 3rem)',
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  Witness The Journey: <br /> From Biological Mutiny to Sky Mastery
-                </h2>
+            {/* Circular decorative badge */}
+            <div className="journey-bento-circle reveal reveal-delay-2">
+              <div className="journey-circle-inner">
+                <span className="journey-circle-icon">✦</span>
               </div>
+              <svg className="journey-circle-text" viewBox="0 0 200 200">
+                <defs>
+                  <path id="circlePath" d="M 100,100 m -75,0 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" />
+                </defs>
+                <text>
+                  <textPath href="#circlePath" style={{ fontSize: '11px', letterSpacing: '3.5px', fill: '#555' }}>
+                    A LIFE ABOVE LIMITS • DEFY GRAVITY • A LIFE ABOVE LIMITS •
+                  </textPath>
+                </text>
+              </svg>
+            </div>
+
+            {/* Description card — yellow accent */}
+            <div className="journey-bento-desc-card reveal reveal-delay-2">
+              <div className="journey-bento-tags">
+                <span>Skydiving</span>
+                <span>Wingsuit</span>
+                <span>World Record</span>
+              </div>
+              <h3>Unstoppable</h3>
+              <p>
+                Syam Kumar defied every medical prognosis to become India&apos;s first para skydiver
+                aiming for a 45,000ft world record. Your support fuels the impossible.
+              </p>
+              <Link href="?commit=true" scroll={false} className="journey-bento-arrow" aria-label="Fund his dream">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="7" y1="17" x2="17" y2="7" />
+                  <polyline points="7 7 17 7 17 17" />
+                </svg>
+              </Link>
+            </div>
+
+            {/* Stat cards — bottom row */}
+            <div className="journey-bento-stat reveal reveal-delay-1">
+              <span className="journey-bento-stat-number">16</span>
+              <span className="journey-bento-stat-label">Surgeries</span>
+            </div>
+
+            <div className="journey-bento-stat journey-bento-stat-accent reveal reveal-delay-2">
+              <span className="journey-bento-stat-number">100+</span>
+              <span className="journey-bento-stat-label">Solo Skydives</span>
+            </div>
+
+            <div className="journey-bento-stat reveal reveal-delay-3">
+              <span className="journey-bento-stat-number">42K</span>
+              <span className="journey-bento-stat-label">Feet — Wingsuit</span>
+            </div>
+
+            <div className="journey-bento-stat journey-bento-stat-cta reveal reveal-delay-4">
+              <Link href="?commit=true" scroll={false} style={{ color: '#000', textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="7" y1="17" x2="17" y2="7" />
+                  <polyline points="7 7 17 7 17 17" />
+                </svg>
+                <span style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em' }}>CLICK TO FUND</span>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Video Testimonials */}
+      {/* ═══════════════════════════════════════════
+          VIDEO TESTIMONIALS — REF 3 (BloomFi dark cards)
+          ═══════════════════════════════════════════ */}
       <section
         className="section"
-        style={{ background: '#fefce8', position: 'relative', zIndex: 1, paddingBottom: 0 }}
+        style={{ background: 'var(--bg-primary)', position: 'relative', zIndex: 1 }}
       >
-        <div className="container" style={{ textAlign: 'center' }}>
+        <div className="container">
+          <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
+            — TESTIMONIALS
+          </span>
+
+          {/* Editorial pull quote — REF 3 */}
           <p
+            className="reveal"
             style={{
-              maxWidth: '850px',
-              margin: '0 auto var(--space-8)',
-              fontSize: 'var(--text-base)',
-              fontWeight: 600,
-              color: '#000',
-              lineHeight: 1.6,
+              maxWidth: '700px',
+              margin: '0 auto var(--space-10)',
+              fontSize: '20px',
+              fontWeight: 500,
+              color: 'var(--text-body)',
+              lineHeight: 1.7,
+              textAlign: 'center',
             }}
           >
             These testimonials showcase Syam&apos;s incredible journey from medical trauma to sky
-            mastery.
-            <br />
-            Each video tells a part of the story that proves human potential has no ceiling.
+            mastery. Each video tells a part of the story that proves human potential has no ceiling.
           </p>
 
           <div
@@ -299,77 +273,57 @@ export default async function Home() {
               gap: 'var(--space-6)',
             }}
           >
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                style={{
-                  background: '#fff',
-                  borderRadius: '24px',
-                  padding: 'var(--space-4)',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-4)',
-                }}
-              >
-                <div
-                  style={{
-                    background: '#9ca3af',
-                    borderRadius: '16px',
-                    aspectRatio: '16/11',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <svg
-                    width="80"
-                    height="80"
-                    viewBox="0 0 24 24"
-                    fill="white"
-                    style={{ opacity: 0.9 }}
-                  >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+            {[
+              'The Medical Journey: From Hospital Bed to Sky',
+              'First Solo Skydive: Defying Gravity',
+              'The Wingsuit Dream: 42,000 Feet',
+            ].map((title, i) => (
+              <div key={i} className="video-card reveal" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="video-thumb">
+                  <div className="play-btn-circle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--accent-primary)">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
                 </div>
-                <p
-                  style={{
-                    fontSize: 'var(--text-sm)',
-                    color: '#000',
-                    fontWeight: 500,
-                    lineHeight: 1.4,
-                    margin: 'var(--space-2) 0',
-                  }}
-                >
-                  The Medical Journey: From
-                  <br />
-                  Hospital Bed to Sky
-                </p>
+                <p className="video-card-title">{title}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Metrics Strip */}
-      <section className="section" style={{ paddingTop: 0 }}>
+      {/* ═══════════════════════════════════════════
+          METRICS STRIP — REF 2 + REF 6
+          Dark bento grid
+          ═══════════════════════════════════════════ */}
+      <section
+        className="section"
+        style={{ background: 'var(--bg-primary)', paddingTop: 0 }}
+      >
         <div className="container">
           <MetricsStrip campaign={campaign} />
         </div>
       </section>
 
-      {/* How it Works */}
-      <section className="section" id="how-it-works">
+      {/* ═══════════════════════════════════════════
+          HOW IT WORKS — REF 3 (BloomFi bento) + REF 4 (Emblov grid)
+          Dotted path, outlined step numbers
+          ═══════════════════════════════════════════ */}
+      <section className="section" id="how-it-works" style={{ background: 'var(--bg-primary)' }}>
         <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center' }}>
+          <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
+            — HOW IT WORKS
+          </span>
+          <h2 className="section-title reveal" style={{ textAlign: 'center' }}>
             How It Works
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle reveal" style={{ textAlign: 'center', maxWidth: '500px', margin: '0 auto var(--space-10)' }}>
             Three simple steps to support Syam&apos;s dream
           </p>
 
-          <div className="steps-grid stagger">
-            <div className="card step-card">
+          <div className="steps-grid">
+            <div className="step-card reveal">
               <div className="step-number">1</div>
               <h3 className="step-title">Commit</h3>
               <p className="step-desc">
@@ -377,7 +331,7 @@ export default async function Home() {
                 instantly.
               </p>
             </div>
-            <div className="card step-card">
+            <div className="step-card reveal reveal-delay-1">
               <div className="step-number">2</div>
               <h3 className="step-title">Pay Directly</h3>
               <p className="step-desc">
@@ -385,7 +339,7 @@ export default async function Home() {
                 No middlemen.
               </p>
             </div>
-            <div className="card step-card">
+            <div className="step-card reveal reveal-delay-2">
               <div className="step-number">3</div>
               <h3 className="step-title">Get Verified</h3>
               <p className="step-desc">
@@ -397,58 +351,98 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trust Block */}
-      <section className="section" id="trust">
+      {/* ═══════════════════════════════════════════
+          TRUST / DIRECT PAYMENT — REF 3 (BloomFi dark card)
+          ═══════════════════════════════════════════ */}
+      <section className="section" id="trust" style={{ background: 'var(--bg-primary)' }}>
         <div className="container">
-          <div className="trust-block">
+          <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
+            — TRUST
+          </span>
+
+          <div className="trust-block reveal">
             <h3>💳 Direct Payment — No Middlemen</h3>
             <p
               style={{
-                color: 'var(--text-secondary)',
-                marginBottom: 'var(--space-6)',
+                color: 'rgba(255, 255, 255, 0.6)',
+                marginBottom: 'var(--space-8)',
                 maxWidth: '550px',
-                margin: '0 auto var(--space-6)',
+                margin: '0 auto var(--space-8)',
+                fontSize: 'var(--text-sm)',
+                lineHeight: 1.7,
               }}
             >
               All funds go directly to the campaign&apos;s dedicated account. This platform only
               records your commitment and verifies your payment.
             </p>
+
             <div className="account-details">
               <div className="account-row">
                 <span className="account-row-label">UPI ID</span>
                 <span className="account-row-value">
                   {campaign?.account_info?.upi_id || 'To be configured'}
+                  <button className="copy-btn" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
                 </span>
               </div>
               <div className="account-row">
                 <span className="account-row-label">Account Name</span>
                 <span className="account-row-value">
                   {campaign?.account_info?.account_name || 'To be configured'}
+                  <button className="copy-btn" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
                 </span>
               </div>
               <div className="account-row">
                 <span className="account-row-label">Account Number</span>
                 <span className="account-row-value">
                   {campaign?.account_info?.account_number || 'To be configured'}
+                  <button className="copy-btn" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
                 </span>
               </div>
               <div className="account-row">
                 <span className="account-row-label">IFSC Code</span>
                 <span className="account-row-value">
                   {campaign?.account_info?.ifsc_code || 'To be configured'}
+                  <button className="copy-btn" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
                 </span>
               </div>
               <div className="account-row">
                 <span className="account-row-label">Bank</span>
                 <span className="account-row-value">
                   {campaign?.account_info?.bank_name || 'To be configured'}
+                  <button className="copy-btn" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
                 </span>
               </div>
             </div>
+
             <p
               style={{
                 marginTop: 'var(--space-6)',
-                color: 'var(--text-muted)',
+                color: 'rgba(255, 255, 255, 0.4)',
                 fontSize: 'var(--text-sm)',
               }}
             >
@@ -458,60 +452,40 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Global Commitment Feed */}
+      {/* ═══════════════════════════════════════════
+          GLOBAL COMMITMENT FEED — REF 1 (Armonia rows)
+          ═══════════════════════════════════════════ */}
       <section
         className="section"
         style={{
-          background: 'var(--bg-glass)',
-          borderTop: '1px solid var(--border-color)',
-          borderBottom: '1px solid var(--border-color)',
+          background: 'var(--bg-primary)',
         }}
       >
         <div className="container" style={{ maxWidth: '800px' }}>
+          <div className="live-label" style={{ justifyContent: 'center', width: '100%' }}>
+            <span className="live-dot"></span>
+            — LIVE FEED
+          </div>
+
           <h2
-            className="section-title"
-            style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}
+            className="section-title reveal"
+            style={{ textAlign: 'center', marginBottom: 'var(--space-10)' }}
           >
-            🌟 Real-Time Commitments
+            Real-Time Commitments
           </h2>
 
-          <div
-            className="card"
-            style={{ padding: 0, overflow: 'hidden', maxHeight: '500px', overflowY: 'auto' }}
-          >
+          <div className="feed-card reveal">
             {recentCommitments.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
                 {recentCommitments.map((c, i) => (
-                  <div
-                    key={c.id}
-                    style={{
-                      padding: 'var(--space-4)',
-                      borderBottom:
-                        i < recentCommitments.length - 1 ? '1px solid var(--border-color)' : 'none',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                    }}
-                  >
+                  <div key={c.id} className="feed-row">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                      <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          background: 'var(--accent-primary)',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 'var(--text-lg)',
-                        }}
-                      >
-                        🪂
+                      {/* Avatar — yellow gradient circle with initial */}
+                      <div className="feed-avatar">
+                        {c.full_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '15px' }}>
                           {c.full_name}
                         </div>
                         <div
@@ -532,13 +506,7 @@ export default async function Home() {
                         </div>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        fontWeight: 800,
-                        color: 'var(--accent-green)',
-                        fontSize: 'var(--text-lg)',
-                      }}
-                    >
+                    <div className="feed-amount">
                       ₹{c.amount_committed.toLocaleString('en-IN')}
                     </div>
                   </div>
@@ -547,7 +515,7 @@ export default async function Home() {
             ) : (
               <div
                 style={{
-                  padding: 'var(--space-8)',
+                  padding: 'var(--space-10)',
                   textAlign: 'center',
                   color: 'var(--text-secondary)',
                 }}
@@ -557,26 +525,31 @@ export default async function Home() {
             )}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 'var(--space-6)' }}>
+          <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
             <Link
               href="?commit=true"
               scroll={false}
               className="btn btn-primary"
-              style={{ padding: 'var(--space-3) var(--space-8)' }}
+              style={{ padding: 'var(--space-3) var(--space-8)', borderRadius: '100px' }}
             >
-              Add Your Name
+              Add Your Name →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="section" id="faq">
+      {/* ═══════════════════════════════════════════
+          FAQ
+          ═══════════════════════════════════════════ */}
+      <section className="section" id="faq" style={{ background: '#fff' }}>
         <div className="container">
-          <h2 className="section-title" style={{ textAlign: 'center' }}>
+          <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
+            — FAQ
+          </span>
+          <h2 className="section-title reveal" style={{ textAlign: 'center' }}>
             Frequently Asked Questions
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle reveal" style={{ textAlign: 'center', maxWidth: '500px', margin: '0 auto var(--space-10)' }}>
             Everything you need to know about the campaign
           </p>
           <FAQ />
