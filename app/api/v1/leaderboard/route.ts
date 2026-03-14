@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get('mode') || 'headcount';
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let query: any = supabase.from('campus_stats_view').select('*');
 
     if (mode === 'participation') {

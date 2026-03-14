@@ -25,7 +25,7 @@ export async function GET() {
       'Campus Karma',
       'Participation Rate',
     ];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const rows = (data || []).map((c: any) => [
       `"${c.campus_name}"`,
       `"${c.district}"`,

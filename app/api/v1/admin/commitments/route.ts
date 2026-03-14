@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const authError = validateAdminKey(request);
     if (authError) return authError;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let query: any = supabase
       .from('commitments')
       .select(

@@ -19,6 +19,7 @@ interface CampusCommitment {
   full_name: string;
   amount_committed: number;
   created_at: string;
+  user_hash: string;
 }
 
 async function getCampusCommitments(id: string): Promise<CampusCommitment[]> {
@@ -70,8 +71,20 @@ export default async function CampusDetailPage({
   const tierInfo = tierThresholds[campus.tier || 'E'] || { next: null, need: null };
   const toNextTier = tierInfo.need ? tierInfo.need - (campus.verified_contributors || 0) : null;
 
-  // Compute top committers
-  const sortedByAmount = [...commitments].sort((a, b) => b.amount_committed - a.amount_committed);
+  // Compute top committers (consolidated by user_hash)
+  const groupedCommitments = commitments.reduce((acc, curr) => {
+    const hash = curr.user_hash;
+    if (!acc[hash]) {
+      acc[hash] = { ...curr };
+    } else {
+      acc[hash].amount_committed += curr.amount_committed;
+      // Keep the most recent name, or whichever you prefer
+    }
+    return acc;
+  }, {} as Record<string, CampusCommitment>);
+
+  const consolidatedList = Object.values(groupedCommitments);
+  const sortedByAmount = consolidatedList.sort((a, b) => b.amount_committed - a.amount_committed);
   const topCommitters = sortedByAmount.slice(0, 5);
 
   return (

@@ -224,16 +224,16 @@ export default function AdminDashboard() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       complete: async (results: any) => {
         try {
           const validTypes = ['engineering', 'nursing', 'poly', 'arts', 'other'];
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const rows = results.data
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             .filter((row: any) => row.name || row.campus_name)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             .map((row: any) => {
               const name = (row.name || row.campus_name || '').trim();
               const district = (row.district || '').trim();
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
               return { name, district, type };
             })
             // Extra safety to avoid sending empty rows or headers if name matches 'name'
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             .filter((row: any) => row.name && row.name.toLowerCase() !== 'name');
 
           if (rows.length === 0) throw new Error('No valid rows found in CSV');
