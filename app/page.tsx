@@ -121,17 +121,12 @@ export default async function Home() {
             </div>
 
             {/* Card 6: Goal text — dark */}
-            <div className="hero-goal-card hero-goal-dark">
-              <p style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4 }}>
-                100% of your ₹100 goes directly to the campaign. No middlemen.
-              </p>
-            </div>
+
           </div>
         </div>
 
         {/* Trust line at bottom */}
         <div className="hero-trust-line animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
-          Join 700+ contributors trusting #LetHimFly to support Syam&apos;s dream.
         </div>
       </section>
 
