@@ -25,6 +25,7 @@ export async function GET() {
     let verified_contributors_total = 0;
     let pending_verification_total = 0;
     let total_commitments_total = 0;
+    let total_amount_committed = 0;
 
     if (!metricsError && metrics) {
       metrics.forEach((c: { status: string; amount_committed: number }) => {
@@ -36,6 +37,7 @@ export async function GET() {
         }
         if (['COMMITTED', 'PENDING_VERIFICATION', 'VERIFIED'].includes(c.status)) {
           total_commitments_total++;
+          total_amount_committed += c.amount_committed;
         }
       });
     }
@@ -46,11 +48,13 @@ export async function GET() {
       verified_contributors_total,
       pending_verification_total,
       total_commitments_total,
+      total_amount_committed,
       end_at: settings.end_at,
       leaderboard_mode: settings.leaderboard_mode,
       account_info: settings.account_info,
       show_pending_publicly: settings.show_pending_publicly,
       screenshot_mandatory: settings.screenshot_mandatory ?? false,
+      one_verified_per_phone: settings.one_verified_per_phone ?? false,
     });
   } catch (error) {
     console.error('Campaign API error:', error);
