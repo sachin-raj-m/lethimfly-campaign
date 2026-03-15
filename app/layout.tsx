@@ -26,9 +26,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: '#LetHimFly — Help Syam Kumar S Represent India 🇮🇳',
+  title: '#LetHimFly - Help Syam Kumar S Represent India 🇮🇳',
   description:
-    'Join your campus to help Syam Kumar S represent India at the 2026 International Indoor Para Skydiving Championship. Commit ₹100, pay directly, get verified.',
+    'Join your campus to help Syam Kumar S represent India at the 2026 International Indoor Para Skydiving Championship. Commit ₹1 (1 Rupee Challenge), pay directly, get verified.',
   keywords: [
     'LetHimFly',
     'Syam Kumar',
@@ -38,7 +38,7 @@ export const metadata = {
     'mulearn',
   ],
   openGraph: {
-    title: '#LetHimFly — Help Syam Kumar S Represent India',
+    title: '#LetHimFly - Help Syam Kumar S Represent India',
     description:
       'Join your campus to help Syam Kumar S represent India at the 2026 International Indoor Para Skydiving Championship.',
     type: 'website',

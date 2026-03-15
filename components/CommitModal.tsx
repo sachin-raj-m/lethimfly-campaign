@@ -28,7 +28,7 @@ export default function CommitModal() {
     full_name: '',
     phone: '',
     email: '',
-    amount_committed: 100,
+    amount_committed: 1,
   });
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -290,7 +290,7 @@ export default function CommitModal() {
                 marginBottom: 'var(--space-2)',
               }}
             >
-              {[50, 100, 200, 500].map((amt) => (
+              {[1, 50, 100, 500, 1000].map((amt) => (
                 <button
                   key={amt}
                   type="button"
@@ -309,11 +309,11 @@ export default function CommitModal() {
               placeholder="Custom amount"
               value={form.amount_committed}
               onChange={(e) =>
-                setForm({ ...form, amount_committed: parseInt(e.target.value) || 100 })
+                setForm({ ...form, amount_committed: parseInt(e.target.value) || 1 })
               }
               min={1}
             />
-            <span className="form-hint">₹100 is recommended.</span>
+            <span className="form-hint">₹1 challenge - any amount counts.</span>
           </div>
 
           <div className="form-group">

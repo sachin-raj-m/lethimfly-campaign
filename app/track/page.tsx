@@ -104,7 +104,7 @@ function TrackContent() {
         </div>
         <div>
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Campus</span>
-          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{r.campus_name || '—'}</p>
+          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{r.campus_name || '-'}</p>
         </div>
       </div>
 

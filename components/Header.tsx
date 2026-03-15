@@ -2,19 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function Header() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
+
+    const checkAdmin = async (token: string) => {
+      try {
+        const res = await fetch('/api/v1/admin/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setIsAdmin(!!data.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSignedIn(!!session?.user);
+      if (session?.access_token) checkAdmin(session.access_token);
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSignedIn(!!session?.user);
+      if (session?.access_token) checkAdmin(session.access_token);
+      else setIsAdmin(false);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -33,6 +53,8 @@ export default function Header() {
     setMobileOpen(false);
   };
 
+  if (pathname?.startsWith('/admin')) return null;
+
   return (
     <header className="site-header">
       <div className="container header-inner">
@@ -46,6 +68,11 @@ export default function Header() {
           <Link href="/campuses">Campuses</Link>
           <Link href="/leaderboard">Leaderboard</Link>
           <Link href="/track">My commitments</Link>
+          {isAdmin && (
+            <Link href="/admin" className="header-admin-link">
+              Admin
+            </Link>
+          )}
           {signedIn ? (
             <button type="button" onClick={handleLogout} className="header-auth-btn">
               Log out
@@ -58,7 +85,7 @@ export default function Header() {
         </nav>
 
         <Link href="?commit=true" scroll={false} className="btn btn-primary btn-sm header-cta">
-          Commit ₹100
+          Commit ₹1
         </Link>
 
         <button
@@ -88,6 +115,11 @@ export default function Header() {
         <Link href="/track" onClick={() => setMobileOpen(false)}>
           My commitments
         </Link>
+        {isAdmin && (
+          <Link href="/admin" onClick={() => setMobileOpen(false)} className="header-admin-link">
+            Admin
+          </Link>
+        )}
         {signedIn ? (
           <button type="button" onClick={handleLogout} className="header-auth-btn">
             Log out
@@ -104,7 +136,7 @@ export default function Header() {
           onClick={() => setMobileOpen(false)}
           style={{ marginTop: '0.5rem', textAlign: 'center' }}
         >
-          Commit ₹100
+          Commit ₹1
         </Link>
       </nav>
     </header>

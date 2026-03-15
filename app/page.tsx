@@ -38,7 +38,7 @@ export default async function Home() {
   return (
     <>
       {/* ═══════════════════════════════════════════
-          HERO — Bento Grid with Campaign Goals
+          HERO - Bento Grid with Campaign Goals
           Headline left, goal cards right, viewport fit
           ═══════════════════════════════════════════ */}
       <section className="hero-bento">
@@ -50,7 +50,7 @@ export default async function Home() {
             </h1>
 
             <p className="hero-bento-desc animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              Support Syam Kumar — from 16 surgeries to the edge of a world record. Commit ₹100 to help him represent India.
+              Support Syam Kumar - from 16 surgeries to the edge of a world record. Commit ₹1 (1 Rupee Challenge) to help him represent India.
             </p>
 
             <div className="hero-bento-cta-row animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
@@ -82,13 +82,13 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Card 2: Goal text card — yellow */}
+            {/* Card 2: Goal text card - yellow */}
             <div className="hero-goal-card hero-goal-yellow">
               <h3>45,000 ft</h3>
-              <p>World record skydive attempt — higher than any para athlete has ever jumped.</p>
+              <p>World record skydive attempt - higher than any para athlete has ever jumped.</p>
             </div>
 
-            {/* Card 3: Image card — person */}
+            {/* Card 3: Image card - person */}
             <div className="hero-goal-card hero-goal-peach">
               <img
                 src="https://images.unsplash.com/photo-1544485351-46abcc7bfbf8?q=80&w=400&auto=format&fit=crop"
@@ -101,7 +101,7 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Card 4: Goal text card — light */}
+            {/* Card 4: Goal text card - light */}
             <div className="hero-goal-card hero-goal-light">
               <h3>Represent India</h3>
               <p>At the 2026 International Indoor Para Skydiving Championship. Be part of history.</p>
@@ -120,7 +120,7 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Card 6: Goal text — dark */}
+            {/* Card 6: Goal text - dark */}
 
           </div>
         </div>
@@ -131,12 +131,12 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          JOURNEY / STATS — Bento Grid Layout
+          JOURNEY / STATS - Bento Grid Layout
           Large headline wrapping around cards
           ═══════════════════════════════════════════ */}
       <section className="section" style={{ background: '#fff' }}>
         <div className="container">
-          <span className="section-label">— THE STORY</span>
+          <span className="section-label">- THE STORY</span>
 
           <div className="journey-bento">
             {/* Row 1: Headline area + Dark image card */}
@@ -152,7 +152,7 @@ export default async function Home() {
               </h2>
             </div>
 
-            {/* Dark image card — top right */}
+            {/* Dark image card - top right */}
             <div className="journey-bento-image-card reveal reveal-delay-1">
               <span className="journey-bento-image-label">The Story</span>
               <div className="journey-bento-star">✦</div>
@@ -183,7 +183,7 @@ export default async function Home() {
               </svg>
             </div>
 
-            {/* Description card — yellow accent */}
+            {/* Description card - yellow accent */}
             <div className="journey-bento-desc-card reveal reveal-delay-2">
               <div className="journey-bento-tags">
                 <span>Skydiving</span>
@@ -203,7 +203,7 @@ export default async function Home() {
               </Link>
             </div>
 
-            {/* Stat cards — bottom row */}
+            {/* Stat cards - bottom row */}
             <div className="journey-bento-stat reveal reveal-delay-1">
               <span className="journey-bento-stat-number">16</span>
               <span className="journey-bento-stat-label">Surgeries</span>
@@ -216,7 +216,7 @@ export default async function Home() {
 
             <div className="journey-bento-stat reveal reveal-delay-3">
               <span className="journey-bento-stat-number">42K</span>
-              <span className="journey-bento-stat-label">Feet — Wingsuit</span>
+              <span className="journey-bento-stat-label">Feet - Wingsuit</span>
             </div>
 
             <div className="journey-bento-stat journey-bento-stat-cta reveal reveal-delay-4">
@@ -233,7 +233,7 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          VIDEO TESTIMONIALS — REF 3 (BloomFi dark cards)
+          VIDEO TESTIMONIALS - REF 3 (BloomFi dark cards)
           ═══════════════════════════════════════════ */}
       <section
         className="section"
@@ -241,10 +241,10 @@ export default async function Home() {
       >
         <div className="container">
           <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
-            — TESTIMONIALS
+            - TESTIMONIALS
           </span>
 
-          {/* Editorial pull quote — REF 3 */}
+          {/* Editorial pull quote - REF 3 */}
           <p
             className="reveal"
             style={{
@@ -289,7 +289,7 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          METRICS STRIP — REF 2 + REF 6
+          METRICS STRIP - REF 2 + REF 6
           Dark bento grid
           ═══════════════════════════════════════════ */}
       <section
@@ -302,13 +302,13 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          HOW IT WORKS — REF 3 (BloomFi bento) + REF 4 (Emblov grid)
+          HOW IT WORKS - REF 3 (BloomFi bento) + REF 4 (Emblov grid)
           Dotted path, outlined step numbers
           ═══════════════════════════════════════════ */}
       <section className="section" id="how-it-works" style={{ background: 'var(--bg-primary)' }}>
         <div className="container">
           <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
-            — HOW IT WORKS
+            - HOW IT WORKS
           </span>
           <h2 className="section-title reveal" style={{ textAlign: 'center' }}>
             How It Works
@@ -322,7 +322,7 @@ export default async function Home() {
               <div className="step-number">1</div>
               <h3 className="step-title">Commit</h3>
               <p className="step-desc">
-                Choose your campus and commit ₹100 (or any amount). Your commitment is recorded
+                Choose your campus and commit ₹1 or any amount (1 Rupee Challenge). Your commitment is recorded
                 instantly.
               </p>
             </div>
@@ -347,16 +347,16 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          TRUST / DIRECT PAYMENT — REF 3 (BloomFi dark card)
+          TRUST / DIRECT PAYMENT - REF 3 (BloomFi dark card)
           ═══════════════════════════════════════════ */}
       <section className="section" id="trust" style={{ background: 'var(--bg-primary)' }}>
         <div className="container">
           <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
-            — TRUST
+            - TRUST
           </span>
 
           <div className="trust-block reveal">
-            <h3>💳 Direct Payment — No Middlemen</h3>
+            <h3>💳 Direct Payment - No Middlemen</h3>
             <p
               style={{
                 color: 'rgba(255, 255, 255, 0.6)',
@@ -459,7 +459,7 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════
-          GLOBAL COMMITMENT FEED — REF 1 (Armonia rows)
+          GLOBAL COMMITMENT FEED - REF 1 (Armonia rows)
           ═══════════════════════════════════════════ */}
       <section
         className="section"
@@ -470,7 +470,7 @@ export default async function Home() {
         <div className="container" style={{ maxWidth: '800px' }}>
           <div className="live-label" style={{ justifyContent: 'center', width: '100%' }}>
             <span className="live-dot"></span>
-            — LIVE FEED
+            - LIVE FEED
           </div>
 
           <h2
@@ -486,7 +486,7 @@ export default async function Home() {
                 {recentCommitments.map((c, i) => (
                   <div key={c.id} className="feed-row">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                      {/* Avatar — yellow gradient circle with initial */}
+                      {/* Avatar - yellow gradient circle with initial */}
                       <div className="feed-avatar">
                         {c.full_name.charAt(0).toUpperCase()}
                       </div>
@@ -550,7 +550,7 @@ export default async function Home() {
       <section className="section" id="faq" style={{ background: '#fff' }}>
         <div className="container">
           <span className="section-label" style={{ textAlign: 'center', display: 'block' }}>
-            — FAQ
+            - FAQ
           </span>
           <h2 className="section-title reveal" style={{ textAlign: 'center' }}>
             Frequently Asked Questions

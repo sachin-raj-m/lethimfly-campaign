@@ -188,7 +188,7 @@ export default async function CampusDetailPage({
         >
           🪂 Commit to the cause
         </Link>
-        <ShareButton title={`Commit to the cause — ${campus.campus_name} — #LetHimFly`} campusId={id} />
+        <ShareButton title={`Commit to the cause - ${campus.campus_name} - #LetHimFly`} campusId={id} />
       </div>
 
       {/* Top Committers Section */}
