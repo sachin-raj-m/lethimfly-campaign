@@ -29,6 +29,7 @@ export default function CommitModal() {
     phone: '',
     email: '',
     amount_committed: 1,
+    other_campus_name: '',
   });
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -100,6 +101,10 @@ export default function CommitModal() {
       setError('Please select a campus first');
       return;
     }
+    if (form.campus_id === '__other__' && !form.other_campus_name.trim()) {
+      setError('Please enter your college name');
+      return;
+    }
     if (!consent) {
       setError('Please agree to the terms to continue');
       return;
@@ -113,6 +118,7 @@ export default function CommitModal() {
         body: JSON.stringify({
           ...form,
           email: form.email || undefined,
+          other_campus_name: form.campus_id === '__other__' ? form.other_campus_name.trim() : undefined,
         }),
       });
 
@@ -217,26 +223,30 @@ export default function CommitModal() {
               <select
                 className="form-input"
                 value={form.campus_id}
-                onChange={(e) => setForm({ ...form, campus_id: e.target.value })}
+                onChange={(e) => setForm({ ...form, campus_id: e.target.value, other_campus_name: '' })}
                 required
               >
-                <option value="" disabled>
-                  -- Select a Campus --
-                </option>
+                <option value="" disabled>-- Select a Campus --</option>
                 {campuses.map((c) => (
                   <option key={c.campus_id} value={c.campus_id}>
                     {c.campus_name} {c.district ? `(${c.district})` : ''}
                   </option>
                 ))}
+                <option value="__other__">Other (not listed)</option>
               </select>
             )}
-            <span className="form-hint" style={{ display: 'block', marginTop: '4px' }}>
-              Can&apos;t find your campus?{' '}
-              <Link href="/campuses" onClick={closeModal} style={{ textDecoration: 'underline' }}>
-                View all campuses
-              </Link>
-              .
-            </span>
+            {form.campus_id === '__other__' && (
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Enter your college name"
+                value={form.other_campus_name}
+                onChange={(e) => setForm({ ...form, other_campus_name: e.target.value })}
+                required
+                style={{ marginTop: 'var(--space-2)' }}
+                autoFocus
+              />
+            )}
           </div>
 
           <div className="form-group">
@@ -347,7 +357,7 @@ export default function CommitModal() {
             type="submit"
             className="btn btn-primary btn-lg"
             style={{ width: '100%', borderRadius: '9999px' }}
-            disabled={loading || !form.campus_id}
+            disabled={loading || !form.campus_id || (form.campus_id === '__other__' && !form.other_campus_name.trim())}
           >
             {loading ? 'Submitting...' : '🪂 I Commit to #LetHimFly'}
           </button>
