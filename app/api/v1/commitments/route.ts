@@ -6,19 +6,24 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
     const body = await request.json();
 
-    const { campus_id, full_name, phone, email, amount_committed } = body as {
+    const { campus_id: rawCampusId, full_name, phone, email, amount_committed, other_campus_name } = body as {
       campus_id: string;
       full_name: string;
       phone: string;
       email?: string;
       amount_committed?: number;
+      other_campus_name?: string;
     };
 
-    if (!campus_id || !full_name || !phone) {
+    if (!rawCampusId || !full_name || !phone) {
       return NextResponse.json(
         { error: 'campus_id, full_name, and phone are required' },
         { status: 400 }
       );
+    }
+
+    if (rawCampusId === '__other__' && !other_campus_name?.trim()) {
+      return NextResponse.json({ error: 'Please enter your college name' }, { status: 400 });
     }
 
     if (full_name.trim().length < 2) {
@@ -31,6 +36,22 @@ export async function POST(request: NextRequest) {
         { error: 'Please enter a valid 10-digit phone number' },
         { status: 400 }
       );
+    }
+
+    let campus_id = rawCampusId;
+
+    // For "Other" selection, find the special "Other / Not Listed" campus
+    if (rawCampusId === '__other__') {
+      const { data: otherCampus } = await supabase
+        .from('campuses')
+        .select('id, name')
+        .eq('name', 'Other / Not Listed')
+        .eq('is_active', true)
+        .single();
+      if (!otherCampus) {
+        return NextResponse.json({ error: 'Other campus not configured. Please contact admin.' }, { status: 500 });
+      }
+      campus_id = otherCampus.id;
     }
 
     const { data: campus, error: campusError } = await supabase
@@ -91,6 +112,7 @@ export async function POST(request: NextRequest) {
         email: email?.trim() || null,
         amount_committed: amount_committed ?? 1,
         status: 'COMMITTED',
+        ...(rawCampusId === '__other__' && other_campus_name ? { other_campus_name: other_campus_name.trim() } : {}),
       })
       .select()
       .single();
@@ -100,14 +122,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create commitment' }, { status: 500 });
     }
 
+    const displayCampusName = other_campus_name?.trim() || campus.name;
     return NextResponse.json(
       {
         commitment_id: commitment.id,
         status: commitment.status,
-        campus_name: campus.name,
+        campus_name: displayCampusName,
         amount_committed: commitment.amount_committed,
         share_payload: {
-          text: `I just committed ₹${commitment.amount_committed} for Syam Kumar to fly for India 🇮🇳 via ${campus.name}! Join the #LetHimFly campaign!`,
+          text: `I just committed ₹${commitment.amount_committed} for Syam Kumar to fly for India 🇮🇳 via ${displayCampusName}! Join the #LetHimFly campaign!`,
           url: '',
         },
       },

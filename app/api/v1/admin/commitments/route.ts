@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         `
         id, full_name, phone, email, amount_committed, utr_number,
         screenshot_url, status, committed_at, utr_submitted_at,
-        verified_at, rejection_reason, campus_id,
+        verified_at, rejection_reason, campus_id, other_campus_name,
         campuses ( name, district )
       `,
         { count: 'exact' }

@@ -23,6 +23,7 @@ interface CommitmentAdminView {
   status: string;
   campus_id: string;
   campuses: { name: string; district?: string };
+  other_campus_name?: string | null;
   utr_number?: string;
   screenshot_url?: string;
   committed_at: string;
@@ -897,7 +898,10 @@ export default function AdminDashboard() {
                           <strong style={{ color: 'var(--accent-gold)' }}>₹{c.amount_committed}</strong>
                         </div>
                         <div>
-                          <span style={{ color: 'var(--text-muted)' }}>Campus:</span> {c.campuses?.name}
+                          <span style={{ color: 'var(--text-muted)' }}>Campus:</span>{' '}
+                          {c.other_campus_name
+                            ? <>{c.other_campus_name} <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontStyle: 'italic' }}>(not listed)</span></>
+                            : c.campuses?.name}
                         </div>
                         <div>
                           <span style={{ color: 'var(--text-muted)' }}>UTR:</span>{' '}
