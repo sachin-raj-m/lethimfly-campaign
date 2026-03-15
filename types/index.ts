@@ -51,7 +51,7 @@ export interface Commitment {
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
-  campuses?: { name: string } | null;
+  campuses?: { name: string; district?: string } | null;
 }
 
 export interface AccountInfo {
