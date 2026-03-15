@@ -74,6 +74,8 @@ export default function AdminDashboard() {
   } | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [qrUploading, setQrUploading] = useState(false);
+  const qrInputRef = useRef<HTMLInputElement>(null);
 
   const [commitmentHistory, setCommitmentHistory] = useState<{
     id: string; action: string; before_json: Record<string, unknown> | null;
@@ -379,6 +381,34 @@ export default function AdminDashboard() {
       showToast('Network error', 'error');
     } finally {
       setSubmittingUtr(false);
+    }
+  };
+
+  const handleQrUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !paymentSettings) return;
+    setQrUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/v1/admin/upload-qr', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getAuthKey()}` },
+        body: fd,
+      });
+      clearAuthOn401(res);
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setPaymentSettings({ ...paymentSettings, qr_code_url: data.url });
+        showToast('QR image uploaded');
+      } else {
+        showToast(data.error || 'Upload failed', 'error');
+      }
+    } catch {
+      showToast('Network error during upload', 'error');
+    } finally {
+      setQrUploading(false);
+      if (qrInputRef.current) qrInputRef.current.value = '';
     }
   };
 
@@ -1236,102 +1266,205 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Payment tab: UPI QR, UPI ID, bank details - populated on site */}
+        {/* Payment / Bank Details tab */}
         {activeTab === 'payment' && (
-          <div className="card admin-form-card">
-            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
-              Payment settings
-            </h3>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
-              These details are shown on the homepage and Pay page. UTR remains mandatory; screenshot can be optional.
-            </p>
-            {paymentLoading ? (
-              <div className="skeleton" style={{ height: '320px' }} />
-            ) : paymentSettings ? (
-              <form onSubmit={handleSavePaymentSettings} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">UPI ID</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. campaign@upi"
-                    value={paymentSettings.upi_id}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, upi_id: e.target.value })}
-                  />
+          <div className="admin-payment-grid">
+            {/* Edit form */}
+            <div className="card admin-form-card">
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-1)' }}>
+                💳 Bank &amp; Payment details
+              </h3>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
+                These details are shown on the homepage and Pay page. Save to update them instantly across the site.
+              </p>
+              {paymentLoading ? (
+                <div className="skeleton" style={{ height: '420px' }} />
+              ) : paymentSettings ? (
+                <form onSubmit={handleSavePaymentSettings} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Account name (beneficiary)</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. Syam Kumar"
+                        value={paymentSettings.account_name}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, account_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Bank name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. State Bank of India"
+                        value={paymentSettings.bank_name}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, bank_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Account number</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. 1234567890123"
+                        value={paymentSettings.account_number}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, account_number: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">IFSC code</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. SBIN0001234"
+                        value={paymentSettings.ifsc_code}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, ifsc_code: e.target.value.toUpperCase() })}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">UPI ID</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. name@upi"
+                        value={paymentSettings.upi_id}
+                        onChange={(e) => setPaymentSettings({ ...paymentSettings, upi_id: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* QR code upload */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">UPI QR code image</label>
+                    <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {paymentSettings.qr_code_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={paymentSettings.qr_code_url}
+                          alt="QR preview"
+                          style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: '#fff' }}
+                        />
+                      )}
+                      <div style={{ flex: 1, minWidth: 180 }}>
+                        <input
+                          ref={qrInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          style={{ display: 'none' }}
+                          onChange={handleQrUpload}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => qrInputRef.current?.click()}
+                          disabled={qrUploading}
+                        >
+                          {qrUploading ? 'Uploading...' : paymentSettings.qr_code_url ? '🔄 Replace QR image' : '📤 Upload QR image'}
+                        </button>
+                        {paymentSettings.qr_code_url && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ marginLeft: 'var(--space-2)', color: 'var(--accent-red)' }}
+                            onClick={() => setPaymentSettings({ ...paymentSettings, qr_code_url: '' })}
+                          >
+                            Remove
+                          </button>
+                        )}
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--space-1)' }}>
+                          JPG, PNG or WebP, max 2 MB. Shown on Pay page.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '0' }} />
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                    <input
+                      type="checkbox"
+                      checked={paymentSettings.screenshot_mandatory}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, screenshot_mandatory: e.target.checked })}
+                    />
+                    Require payment screenshot when submitting UTR
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                    <input
+                      type="checkbox"
+                      checked={paymentSettings.one_verified_per_phone}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, one_verified_per_phone: e.target.checked })}
+                    />
+                    Limit to one commitment per phone number (uncheck to allow multiple commitments &amp; payments)
+                  </label>
+                  <button type="submit" className="btn btn-primary" disabled={paymentSaving} style={{ alignSelf: 'flex-start' }}>
+                    {paymentSaving ? 'Saving...' : '💾 Save payment settings'}
+                  </button>
+                </form>
+              ) : (
+                <p style={{ color: 'var(--text-muted)' }}>Could not load settings.</p>
+              )}
+            </div>
+
+            {/* Live preview */}
+            {paymentSettings && (
+              <div className="card" style={{ alignSelf: 'flex-start' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
+                  Live preview — as shown to users
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">UPI QR image URL</label>
-                  <input
-                    type="url"
-                    className="form-input"
-                    placeholder="https://... or Supabase storage URL"
-                    value={paymentSettings.qr_code_url}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, qr_code_url: e.target.value })}
-                  />
-                  <span className="form-hint">Optional. Image URL for UPI QR code (shown on site).</span>
+                <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-1)' }}>💳 Campaign Account</h4>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
+                  Pay directly via UPI or Bank Transfer
+                </p>
+                <div className="account-details" style={{ fontSize: 'var(--text-sm)' }}>
+                  {paymentSettings.upi_id && (
+                    <div className="account-row">
+                      <span className="account-row-label">UPI ID</span>
+                      <span className="account-row-value">{paymentSettings.upi_id}</span>
+                    </div>
+                  )}
+                  {paymentSettings.account_name && (
+                    <div className="account-row">
+                      <span className="account-row-label">Name</span>
+                      <span className="account-row-value">{paymentSettings.account_name}</span>
+                    </div>
+                  )}
+                  {paymentSettings.account_number && (
+                    <div className="account-row">
+                      <span className="account-row-label">A/C Number</span>
+                      <span className="account-row-value">{paymentSettings.account_number}</span>
+                    </div>
+                  )}
+                  {paymentSettings.ifsc_code && (
+                    <div className="account-row">
+                      <span className="account-row-label">IFSC</span>
+                      <span className="account-row-value">{paymentSettings.ifsc_code}</span>
+                    </div>
+                  )}
+                  {paymentSettings.bank_name && (
+                    <div className="account-row">
+                      <span className="account-row-label">Bank</span>
+                      <span className="account-row-value">{paymentSettings.bank_name}</span>
+                    </div>
+                  )}
+                  {paymentSettings.qr_code_url && (
+                    <div className="account-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <span className="account-row-label">UPI QR</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={paymentSettings.qr_code_url}
+                        alt="UPI QR Code"
+                        style={{ maxWidth: 160, height: 'auto', borderRadius: 'var(--radius-sm)', marginTop: 'var(--space-2)' }}
+                      />
+                    </div>
+                  )}
+                  {!paymentSettings.upi_id && !paymentSettings.account_number && (
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      No details set yet. Fill in the form and save.
+                    </p>
+                  )}
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Account name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Beneficiary name"
-                    value={paymentSettings.account_name}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, account_name: e.target.value })}
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Account number</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Bank account number"
-                    value={paymentSettings.account_number}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, account_number: e.target.value })}
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">IFSC code</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. SBIN0001234"
-                    value={paymentSettings.ifsc_code}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, ifsc_code: e.target.value })}
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Bank name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. State Bank of India"
-                    value={paymentSettings.bank_name}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, bank_name: e.target.value })}
-                  />
-                </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
-                  <input
-                    type="checkbox"
-                    checked={paymentSettings.screenshot_mandatory}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, screenshot_mandatory: e.target.checked })}
-                  />
-                  Require payment screenshot when submitting UTR
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
-                  <input
-                    type="checkbox"
-                    checked={paymentSettings.one_verified_per_phone}
-                    onChange={(e) => setPaymentSettings({ ...paymentSettings, one_verified_per_phone: e.target.checked })}
-                  />
-                  Limit to one commitment per phone number (uncheck to allow multiple commitments &amp; payments)
-                </label>
-                <button type="submit" className="btn btn-primary" disabled={paymentSaving}>
-                  {paymentSaving ? 'Saving...' : 'Save payment settings'}
-                </button>
-              </form>
-            ) : (
-              <p style={{ color: 'var(--text-muted)' }}>Could not load settings.</p>
+              </div>
             )}
           </div>
         )}

@@ -2706,6 +2706,20 @@ select:focus-visible,
   min-width: 0;
 }
 
+/* ---- Admin payment tab grid ---- */
+.admin-payment-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .admin-payment-grid {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
 /* ---- Session expired banner (main site) ---- */
 .session-expired-banner {
   position: fixed;
