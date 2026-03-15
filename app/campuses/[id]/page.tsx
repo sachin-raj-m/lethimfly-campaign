@@ -87,7 +87,7 @@ export default async function CampusDetailPage({
   return (
     <div
       className="container"
-      style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-16)', maxWidth: '800px' }}
+      style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-16)', maxWidth: '800px', minWidth: 0 }}
     >
       {/* Campus Hero */}
       <div
@@ -188,7 +188,7 @@ export default async function CampusDetailPage({
         >
           🪂 Commit to the cause
         </Link>
-        <ShareButton title={`Commit to the cause — ${campus.campus_name} — #LetHimFly`} campusId={id} />
+        <ShareButton title={`Commit to the cause - ${campus.campus_name} - #LetHimFly`} campusId={id} />
       </div>
 
       {/* Top Committers Section */}

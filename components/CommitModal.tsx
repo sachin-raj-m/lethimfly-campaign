@@ -28,7 +28,7 @@ export default function CommitModal() {
     full_name: '',
     phone: '',
     email: '',
-    amount_committed: 100,
+    amount_committed: 1,
   });
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -143,17 +143,21 @@ export default function CommitModal() {
     <div
       className="modal-overlay"
       onClick={closeModal}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="commit-modal-title"
       style={{ zIndex: 1000, display: 'flex', alignItems: 'flex-start', paddingTop: '5vh' }}
     >
       <div
         className="modal-content card"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '600px',
-          width: '90%',
-          maxHeight: '90vh',
+          maxWidth: 'min(600px, calc(100vw - 2 * var(--space-4)))',
+          width: '100%',
+          maxHeight: '85vh',
           overflowY: 'auto',
           position: 'relative',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <button
@@ -172,7 +176,7 @@ export default function CommitModal() {
           &times;
         </button>
 
-        <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: 'var(--space-2)' }}>
+        <h2 id="commit-modal-title" style={{ fontSize: 'clamp(1.25rem, 4vw, 1.5rem)', fontWeight: 800, marginBottom: 'var(--space-2)' }}>
           Make Your Commitment
         </h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-6)' }}>
@@ -286,7 +290,7 @@ export default function CommitModal() {
                 marginBottom: 'var(--space-2)',
               }}
             >
-              {[50, 100, 200, 500].map((amt) => (
+              {[1, 50, 100, 500, 1000].map((amt) => (
                 <button
                   key={amt}
                   type="button"
@@ -305,11 +309,11 @@ export default function CommitModal() {
               placeholder="Custom amount"
               value={form.amount_committed}
               onChange={(e) =>
-                setForm({ ...form, amount_committed: parseInt(e.target.value) || 100 })
+                setForm({ ...form, amount_committed: parseInt(e.target.value) || 1 })
               }
               min={1}
             />
-            <span className="form-hint">₹100 is recommended.</span>
+            <span className="form-hint">₹1 challenge - any amount counts.</span>
           </div>
 
           <div className="form-group">

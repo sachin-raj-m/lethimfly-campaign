@@ -8,7 +8,7 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const commitmentId = searchParams?.get('id') || '';
   const campusName = searchParams?.get('campus') || '';
-  const amount = searchParams?.get('amount') || '100';
+  const amount = searchParams?.get('amount') || '1';
 
   const shareText = `I just committed ₹${amount} for Syam Kumar to fly for India 🇮🇳 via ${
     campusName || 'my campus'
@@ -76,7 +76,7 @@ function SuccessContent() {
           </div>
           <div>
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Campus</span>
-            <p style={{ fontWeight: 600 }}>{campusName || '—'}</p>
+            <p style={{ fontWeight: 600 }}>{campusName || '-'}</p>
           </div>
         </div>
       </div>

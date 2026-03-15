@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, FormEvent, ChangeEvent } from 'react';
+import Link from 'next/link';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
 import { CampusScore } from '@/types';
@@ -73,6 +74,12 @@ export default function AdminDashboard() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
 
+  const [commitmentHistory, setCommitmentHistory] = useState<{
+    id: string; action: string; before_json: Record<string, unknown> | null;
+    after_json: Record<string, unknown> | null; reason: string | null; created_at: string;
+  }[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const [detailedStats, setDetailedStats] = useState<{
     summary: { total_commitments: number; total_amount_committed: number; verified_count: number; verified_amount: number; pending_count: number };
     by_district: { district: string; total_commitments: number; total_amount: number; verified_count: number; verified_amount: number }[];
@@ -81,6 +88,22 @@ export default function AdminDashboard() {
     by_status: { status: string; count: number }[];
   } | null>(null);
   const [detailedStatsLoading, setDetailedStatsLoading] = useState(false);
+
+  const fetchCommitmentHistory = async (id: string) => {
+    setHistoryLoading(true);
+    setCommitmentHistory([]);
+    try {
+      const res = await fetch(`/api/v1/admin/commitments/${id}/history`, {
+        headers: { Authorization: `Bearer ${getAuthKey()}` },
+      });
+      if (res.ok) setCommitmentHistory(await res.json());
+    } catch { /* silent */ } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const formatRupee = (n: number) =>
+    `₹${Math.round(Number(n)).toLocaleString('en-IN', { maximumFractionDigits: 0, useGrouping: false })}`;
 
   const showToast = (message: string, type = 'success') => {
     setToast({ message, type });
@@ -520,137 +543,168 @@ export default function AdminDashboard() {
     );
   }
 
+  const navItems = [
+    { key: 'queue', label: 'Queue', icon: '📋' },
+    { key: 'all', label: 'All', icon: '📊' },
+    { key: 'stats', label: 'Stats', icon: '📈' },
+    { key: 'campuses', label: 'Campuses', icon: '🏫' },
+    { key: 'payment', label: 'Payment', icon: '💳' },
+  ];
+
+  const setTab = (key: string) => {
+    setActiveTab(key);
+    setStatusFilter(key === 'queue' ? 'PENDING_VERIFICATION' : 'all');
+    setPage(1);
+  };
+
   return (
-    <div style={{ minHeight: '100vh' }}>
-      {/* Admin Header */}
-      <div
-        style={{
-          background: 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border-color)',
-          padding: 'var(--space-4) 0',
-        }}
-      >
-        <div
-          className="container"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 'var(--space-3)',
-          }}
-        >
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 800 }}>
-            <span
-              style={{
-                background: 'var(--gradient-hero)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Admin Dashboard
-            </span>
-          </h2>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button className="btn btn-secondary btn-sm" onClick={handleExport}>
-              📥 Export CSV
-            </button>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                sessionStorage.removeItem('admin_token');
-                setAuthed(false);
-                setSessionUser(null);
-                setIsAdminBySession(null);
-              }}
-            >
-              Log out
-            </button>
-          </div>
+    <div className="admin-dashboard admin-layout" style={{ minHeight: '100vh', overflowX: 'hidden', background: 'var(--bg-primary)' }}>
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-header">
+          <Link href="/" className="admin-sidebar-home-link">
+            <span className="admin-sidebar-brand">#LetHimFly</span>
+          </Link>
+          <span className="admin-sidebar-title">Admin</span>
         </div>
-      </div>
-
-      <div className="container" style={{ paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-16)' }}>
-        {/* Stats: Commitments vs Verified — separate sections */}
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Commitments
-          </div>
-          <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 'var(--space-3)' }}>
-            <div className="metric-card">
-              <div className="metric-value blue">{stats.totalCommitted}</div>
-              <div className="metric-label">Users committed</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value gold">₹{stats.totalAmountCommitted.toLocaleString()}</div>
-              <div className="metric-label">Total committed (₹)</div>
-            </div>
-          </div>
-          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 'var(--space-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 'var(--space-4)' }}>
-            Verification
-          </div>
-          <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 0 }}>
-            <div className="metric-card">
-              <div className="metric-value pink">{stats.pending}</div>
-              <div className="metric-label">Pending verification</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value green">{stats.verified}</div>
-              <div className="metric-label">Verified</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value gold">₹{stats.total.toLocaleString()}</div>
-              <div className="metric-label">Total raised (₹)</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{total}</div>
-              <div className="metric-label">In current queue</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 'var(--space-1)',
-            background: 'var(--bg-glass)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-1)',
-            marginBottom: 'var(--space-4)',
-            width: 'fit-content',
-          }}
-        >
-          {[
-            { key: 'queue', label: '📋 Verification Queue' },
-            { key: 'all', label: '📊 All Commitments' },
-            { key: 'stats', label: '📈 Stats' },
-            { key: 'campuses', label: '🏫 Campuses' },
-            { key: 'payment', label: '💳 Payment' },
-          ].map((tab) => (
+        <nav className="admin-sidebar-nav">
+          {navItems.map((tab) => (
             <button
               key={tab.key}
-              className={`btn btn-sm ${activeTab === tab.key ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none' }}
-              onClick={() => {
-                setActiveTab(tab.key);
-                setStatusFilter(tab.key === 'queue' ? 'PENDING_VERIFICATION' : 'all');
-                setPage(1);
-              }}
+              type="button"
+              className={`admin-nav-item ${activeTab === tab.key ? 'active' : ''}`}
+              onClick={() => setTab(tab.key)}
             >
+              <span className="admin-nav-icon" aria-hidden>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
+        </nav>
+        <div className="admin-sidebar-footer">
+          <Link href="/" className="admin-nav-item admin-nav-action">
+            <span className="admin-nav-icon" aria-hidden>🏠</span>
+            Go to homepage
+          </Link>
+          <button type="button" className="admin-nav-item admin-nav-action" onClick={handleExport}>
+            <span className="admin-nav-icon" aria-hidden>📥</span>
+            Export CSV
+          </button>
+          <button
+            type="button"
+            className="admin-nav-item admin-nav-action"
+            onClick={() => {
+              sessionStorage.removeItem('admin_token');
+              setAuthed(false);
+              setSessionUser(null);
+              setIsAdminBySession(null);
+            }}
+          >
+            <span className="admin-nav-icon" aria-hidden>↪</span>
+            Log out
+          </button>
         </div>
+      </aside>
 
+      <main className="admin-main">
+        <div className="admin-main-inner">
+          <header className="admin-header">
+            <h1 className="admin-header-title">Admin Dashboard</h1>
+            <div className="admin-header-actions admin-header-actions-mobile">
+              <Link href="/" className="btn btn-secondary btn-sm">
+                🏠 Home
+              </Link>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handleExport}>
+                📥 Export
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  sessionStorage.removeItem('admin_token');
+                  setAuthed(false);
+                  setSessionUser(null);
+                  setIsAdminBySession(null);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </header>
+
+          {/* Mobile tabs (hidden when sidebar is visible) */}
+          <div className="admin-tabs-mobile tabs-scroll">
+            <div className="tabs-scroll-inner">
+              {navItems.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`btn btn-sm ${activeTab === tab.key ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ border: 'none', flexShrink: 0 }}
+                  onClick={() => setTab(tab.key)}
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Overview metrics - single consolidated row */}
+          <section className="admin-section admin-stats" aria-label="Overview">
+            <div className="admin-overview-grid">
+              <div className="admin-metric-card">
+                <div className="admin-metric-icon" style={{ background: 'rgba(37,99,235,0.1)' }}>👥</div>
+                <div className="admin-metric-body">
+                  <div className="admin-metric-num" style={{ color: '#2563eb' }}>{stats.totalCommitted}</div>
+                  <div className="admin-metric-lbl">Committed</div>
+                </div>
+              </div>
+              <div className="admin-metric-card">
+                <div className="admin-metric-icon" style={{ background: 'rgba(180,83,9,0.1)' }}>💰</div>
+                <div className="admin-metric-body">
+                  <div className="admin-metric-num" style={{ color: '#b45309' }}>{formatRupee(stats.totalAmountCommitted)}</div>
+                  <div className="admin-metric-lbl">Total pledged</div>
+                </div>
+              </div>
+              <div className="admin-metric-card">
+                <div className="admin-metric-icon" style={{ background: 'rgba(5,150,105,0.1)' }}>✅</div>
+                <div className="admin-metric-body">
+                  <div className="admin-metric-num" style={{ color: '#059669' }}>{stats.verified}</div>
+                  <div className="admin-metric-lbl">Verified</div>
+                </div>
+              </div>
+              <div className="admin-metric-card">
+                <div className="admin-metric-icon" style={{ background: 'rgba(5,150,105,0.1)' }}>💵</div>
+                <div className="admin-metric-body">
+                  <div className="admin-metric-num" style={{ color: '#059669' }}>{formatRupee(stats.total)}</div>
+                  <div className="admin-metric-lbl">Total raised</div>
+                </div>
+              </div>
+              <div className="admin-metric-card">
+                <div className="admin-metric-icon" style={{ background: 'rgba(219,39,119,0.1)' }}>⏳</div>
+                <div className="admin-metric-body">
+                  <div className="admin-metric-num" style={{ color: '#db2777' }}>{stats.pending}</div>
+                  <div className="admin-metric-lbl">Pending</div>
+                </div>
+              </div>
+              <div className="admin-metric-card">
+                <div className="admin-metric-icon" style={{ background: 'rgba(0,0,0,0.05)' }}>📋</div>
+                <div className="admin-metric-body">
+                  <div className="admin-metric-num" style={{ color: 'var(--text-primary)' }}>{total}</div>
+                  <div className="admin-metric-lbl">In queue</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        {/* Tab content area */}
+        <div className="admin-content">
         {/* Status filter: show for Queue (single status) and All Commitments (full filter) */}
         {(activeTab === 'queue' || activeTab === 'all') && (
-          <div style={{ marginBottom: 'var(--space-4)' }}>
-            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
-              {activeTab === 'queue' ? '📋 Verification Queue' : '📊 All Commitments'}
+          <div className="admin-block">
+            <h3 className="admin-block-title">
+              {activeTab === 'queue' ? 'Verification Queue' : 'All Commitments'}
             </h3>
-            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginRight: 'var(--space-2)' }}>Filter by status:</span>
-            <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
+            <span className="admin-block-hint">Status:</span>
+            <div style={{ display: 'inline-flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
               {activeTab === 'queue' ? (
                 <button className="btn btn-sm btn-primary" style={{ cursor: 'default' }}>
                   Pending verification
@@ -679,8 +733,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Queue Table */}
-        {queueLoading ? (
+        {/* Queue Table - only visible on Queue and All tabs */}
+        {(activeTab === 'queue' || activeTab === 'all') && (queueLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="skeleton" style={{ height: '80px' }} />
@@ -688,9 +742,9 @@ export default function AdminDashboard() {
           </div>
         ) : commitments.length === 0 ? (
           <div className="empty-state">
-            <div className="icon">✅</div>
+            <div className="icon" aria-hidden>📋</div>
             <h3>Queue is empty</h3>
-            <p>No commitments match the current filter</p>
+            <p>No commitments match the current filter. Switch to another tab or try a different status.</p>
           </div>
         ) : (
           <>
@@ -700,10 +754,10 @@ export default function AdminDashboard() {
                   key={c.id}
                   className="card"
                   style={{ padding: 'var(--space-4)', cursor: 'pointer' }}
-                  onClick={() => setDetailCommitment(c)}
+                  onClick={() => { setDetailCommitment(c); fetchCommitmentHistory(c.id); }}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setDetailCommitment(c)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { setDetailCommitment(c); fetchCommitmentHistory(c.id); } }}
                   aria-label={`View details for ${c.full_name}`}
                 >
                   <div
@@ -756,7 +810,7 @@ export default function AdminDashboard() {
                               borderRadius: '4px',
                             }}
                           >
-                            {c.utr_number || '—'}
+                            {c.utr_number || '-'}
                           </code>
                         </div>
                         {c.utr_submitted_at && (
@@ -854,63 +908,126 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
-        )}
+        ))}
 
         {/* Detailed Stats Tab */}
         {activeTab === 'stats' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>📈 Detailed stats</h3>
+          <div className="admin-block admin-block-stats">
             {detailedStatsLoading ? (
-              <div className="skeleton" style={{ height: '400px' }} />
+              <div className="admin-stats-grid">
+                <div className="skeleton" style={{ height: '300px', borderRadius: '12px' }} />
+                <div className="skeleton" style={{ height: '300px', borderRadius: '12px' }} />
+                <div className="skeleton" style={{ height: '300px', borderRadius: '12px', gridColumn: '1/-1' }} />
+              </div>
             ) : detailedStats ? (
-              <>
-                <div className="card">
-                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>Summary</h4>
-                  <div className="metrics-strip" style={{ paddingTop: 0, paddingBottom: 0 }}>
-                    <div className="metric-card">
-                      <div className="metric-value blue">{detailedStats.summary.total_commitments}</div>
-                      <div className="metric-label">Total commitments</div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="metric-value gold">₹{detailedStats.summary.total_amount_committed.toLocaleString()}</div>
-                      <div className="metric-label">Total committed (₹)</div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="metric-value green">{detailedStats.summary.verified_count}</div>
-                      <div className="metric-label">Verified</div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="metric-value gold">₹{detailedStats.summary.verified_amount.toLocaleString()}</div>
-                      <div className="metric-label">Verified amount (₹)</div>
-                    </div>
-                    <div className="metric-card">
-                      <div className="metric-value pink">{detailedStats.summary.pending_count}</div>
-                      <div className="metric-label">Pending verification</div>
-                    </div>
-                  </div>
+              <div className="admin-stats-grid">
+
+                {/* Bar chart: By district */}
+                <div className="card admin-chart-card">
+                  <h4 className="admin-chart-title">Commitments by district</h4>
+                  {(() => {
+                    const maxVal = Math.max(...detailedStats.by_district.map(r => r.total_commitments), 1);
+                    return (
+                      <div className="admin-bar-chart">
+                        {detailedStats.by_district.slice(0, 12).map((row, i) => (
+                          <div key={row.district || i} className="admin-bar-row">
+                            <div className="admin-bar-label">{row.district || '(unknown)'}</div>
+                            <div className="admin-bar-track">
+                              <div className="admin-bar-fill admin-bar-fill-blue"
+                                style={{ width: `${(row.total_commitments / maxVal) * 100}%` }} />
+                              <div className="admin-bar-fill admin-bar-fill-green"
+                                style={{ width: `${(row.verified_count / maxVal) * 100}%`, marginTop: '3px' }} />
+                            </div>
+                            <div className="admin-bar-count">{row.total_commitments}</div>
+                          </div>
+                        ))}
+                        <div className="admin-bar-legend">
+                          <span className="admin-legend-dot" style={{ background: '#2563eb' }} />Committed
+                          <span className="admin-legend-dot" style={{ background: '#059669', marginLeft: '12px' }} />Verified
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                <div className="card">
-                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By district</h4>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
+                {/* Donut chart: By organisation type */}
+                <div className="card admin-chart-card">
+                  <h4 className="admin-chart-title">Commitments by type</h4>
+                  {(() => {
+                    const palette = ['#2563eb','#059669','#db2777','#b45309','#7c3aed'];
+                    const total = detailedStats.by_type.reduce((s, r) => s + r.total_commitments, 0) || 1;
+                    const cx = 90, cy = 90, r = 68, inner = 42;
+                    let angle = -Math.PI / 2;
+                    const slices = detailedStats.by_type.map((row, i) => {
+                      const frac = row.total_commitments / total;
+                      const sweep = frac * 2 * Math.PI;
+                      const x1 = cx + r * Math.cos(angle);
+                      const y1 = cy + r * Math.sin(angle);
+                      angle += sweep;
+                      const x2 = cx + r * Math.cos(angle);
+                      const y2 = cy + r * Math.sin(angle);
+                      const ix1 = cx + inner * Math.cos(angle - sweep);
+                      const iy1 = cy + inner * Math.sin(angle - sweep);
+                      const ix2 = cx + inner * Math.cos(angle);
+                      const iy2 = cy + inner * Math.sin(angle);
+                      const large = sweep > Math.PI ? 1 : 0;
+                      return { row, frac, color: palette[i % palette.length], path:
+                        `M${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2} L${ix2} ${iy2} A${inner} ${inner} 0 ${large} 0 ${ix1} ${iy1} Z` };
+                    });
+                    return (
+                      <div className="admin-donut-wrap">
+                        <svg viewBox="0 0 180 180" className="admin-donut-svg">
+                          {slices.map((s, i) => (
+                            <path key={i} d={s.path} fill={s.color} stroke="#fff" strokeWidth="2">
+                              <title>{s.row.campus_type}: {s.row.total_commitments}</title>
+                            </path>
+                          ))}
+                          <text x={cx} y={cy - 6} textAnchor="middle" fontSize="18" fontWeight="700" fill="#111">{total}</text>
+                          <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fill="#888">total</text>
+                        </svg>
+                        <div className="admin-donut-legend">
+                          {slices.map((s, i) => (
+                            <div key={i} className="admin-donut-row">
+                              <span className="admin-legend-dot" style={{ background: s.color }} />
+                              <span style={{ textTransform: 'capitalize', flex: 1 }}>{s.row.campus_type}</span>
+                              <span style={{ fontWeight: 600 }}>{s.row.total_commitments}</span>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '11px', marginLeft: '4px' }}>
+                                ({Math.round(s.frac * 100)}%)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Full-width: By campus table */}
+                <div className="card admin-chart-card admin-chart-full">
+                  <h4 className="admin-chart-title">By campus</h4>
+                  <div className="admin-table-wrap">
+                    <table className="admin-table">
                       <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                          <th style={{ padding: 'var(--space-2)' }}>District</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Commitments</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Amount (₹)</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Verified</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Verified (₹)</th>
+                        <tr>
+                          <th>Campus</th>
+                          <th>District</th>
+                          <th>Type</th>
+                          <th style={{ textAlign: 'right' }}>Committed</th>
+                          <th style={{ textAlign: 'right' }}>Amount</th>
+                          <th style={{ textAlign: 'right' }}>Verified</th>
+                          <th style={{ textAlign: 'right' }}>Raised</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {detailedStats.by_district.map((row) => (
-                          <tr key={row.district || '(blank)'} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.district || '(blank)'}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.total_commitments}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>₹{row.total_amount.toLocaleString()}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.verified_count}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>₹{row.verified_amount.toLocaleString()}</td>
+                        {detailedStats.by_campus.map((row, i) => (
+                          <tr key={row.campus_id} className={i % 2 === 1 ? 'admin-table-alt' : ''}>
+                            <td style={{ fontWeight: 500 }}>{row.campus_name}</td>
+                            <td>{row.district}</td>
+                            <td style={{ textTransform: 'capitalize' }}>{row.campus_type}</td>
+                            <td style={{ textAlign: 'right' }}>{row.total_commitments}</td>
+                            <td style={{ textAlign: 'right' }}>{formatRupee(row.total_amount_committed || 0)}</td>
+                            <td style={{ textAlign: 'right', color: '#059669', fontWeight: 600 }}>{row.verified_contributors ?? 0}</td>
+                            <td style={{ textAlign: 'right', color: '#b45309', fontWeight: 600 }}>{formatRupee(row.verified_amount_total || 0)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -918,97 +1035,20 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="card">
-                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By organisation type</h4>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                          <th style={{ padding: 'var(--space-2)' }}>Type</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Commitments</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Amount (₹)</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Verified</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Verified (₹)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detailedStats.by_type.map((row) => (
-                          <tr key={row.campus_type} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: 'var(--space-2)', textTransform: 'capitalize' }}>{row.campus_type}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.total_commitments}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>₹{row.total_amount.toLocaleString()}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.verified_count}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>₹{row.verified_amount.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="card">
-                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By campus</h4>
-                  <div style={{ overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
-                      <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                          <th style={{ padding: 'var(--space-2)' }}>Campus</th>
-                          <th style={{ padding: 'var(--space-2)' }}>District</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Type</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Commitments</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Amount (₹)</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Verified</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Verified (₹)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detailedStats.by_campus.map((row) => (
-                          <tr key={row.campus_id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.campus_name}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.district}</td>
-                            <td style={{ padding: 'var(--space-2)', textTransform: 'capitalize' }}>{row.campus_type}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.total_commitments}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>₹{(row.total_amount_committed || 0).toLocaleString()}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.verified_contributors ?? 0}</td>
-                            <td style={{ padding: 'var(--space-2)' }}>₹{(row.verified_amount_total || 0).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="card">
-                  <h4 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--space-3)' }}>By status</h4>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                          <th style={{ padding: 'var(--space-2)' }}>Status</th>
-                          <th style={{ padding: 'var(--space-2)' }}>Count</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detailedStats.by_status.map((row) => (
-                          <tr key={row.status} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: 'var(--space-2)' }}><span className={`status-badge status-${row.status}`}>{row.status.replace(/_/g, ' ')}</span></td>
-                            <td style={{ padding: 'var(--space-2)' }}>{row.count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
+              </div>
             ) : (
-              <p style={{ color: 'var(--text-muted)' }}>Could not load stats.</p>
+              <div className="empty-state">
+                <div className="icon">📈</div>
+                <h3>No stats available</h3>
+                <p>Stats will appear once commitments are recorded.</p>
+              </div>
             )}
           </div>
         )}
 
         {/* Campuses Tab */}
         {activeTab === 'campuses' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-8)' }}>
+          <div className="admin-campuses-grid">
             {/* Add Campus Form */}
             <div className="card">
               <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-4)' }}>
@@ -1062,40 +1102,34 @@ export default function AdminDashboard() {
               </form>
             </div>
 
-            {/* List Active Campuses (campus info only, no commitment data) */}
-            <div className="card">
-              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-4)' }}>
-                🏫 Active Campuses ({adminCampuses.length})
-              </h3>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
-                Campus list only. For commitment counts and verification, use the Verification Queue or All Commitments tabs.
-              </p>
+            {/* List Active Campuses */}
+            <div className="card admin-campuses-table-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+                <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: 0 }}>
+                  Active Campuses <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({adminCampuses.length})</span>
+                </h3>
+              </div>
               {campusLoading ? (
                 <div className="skeleton" style={{ height: '200px' }} />
               ) : (
-                <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-sm)' }}>
-                    <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                        <th style={{ padding: 'var(--space-2)' }}>Campus name</th>
-                        <th style={{ padding: 'var(--space-2)' }}>District</th>
-                        <th style={{ padding: 'var(--space-2)' }}>Type</th>
-                        <th style={{ padding: 'var(--space-2)' }}>Tier</th>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Campus name</th>
+                        <th>District</th>
+                        <th>Type</th>
+                        <th>Tier</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {adminCampuses.map((c) => (
-                        <tr key={c.campus_id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: 'var(--space-2)' }}>{c.campus_name}</td>
-                          <td style={{ padding: 'var(--space-2)' }}>{c.district}</td>
-                          <td style={{ padding: 'var(--space-2)', textTransform: 'capitalize' }}>
-                            {c.campus_type}
-                          </td>
-                          <td style={{ padding: 'var(--space-2)' }}>
-                            <span
-                              className={`tier-badge tier-${c.tier}`}
-                              style={{ padding: '2px 6px', fontSize: 'var(--text-xs)' }}
-                            >
+                      {adminCampuses.map((c, i) => (
+                        <tr key={c.campus_id} className={i % 2 === 1 ? 'admin-table-alt' : ''}>
+                          <td style={{ fontWeight: 500 }}>{c.campus_name}</td>
+                          <td>{c.district}</td>
+                          <td style={{ textTransform: 'capitalize' }}>{c.campus_type}</td>
+                          <td>
+                            <span className={`tier-badge tier-${c.tier}`} style={{ fontSize: 'var(--text-xs)' }}>
                               {c.tier}
                             </span>
                           </td>
@@ -1147,11 +1181,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Payment tab: UPI QR, UPI ID, bank details — populated on site */}
+        {/* Payment tab: UPI QR, UPI ID, bank details - populated on site */}
         {activeTab === 'payment' && (
-          <div className="card" style={{ maxWidth: '560px' }}>
+          <div className="card admin-form-card">
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-2)' }}>
-              💳 Payment / Campaign account
+              Payment settings
             </h3>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
               These details are shown on the homepage and Pay page. UTR remains mandatory; screenshot can be optional.
@@ -1246,15 +1280,17 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
-      </div>
+        </div>
+        </div>
+      </main>
 
       {/* Commitment Detail Modal */}
       {detailCommitment && (
-        <div className="modal-overlay" onClick={() => { setDetailCommitment(null); setAdminUtr(''); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay" onClick={() => { setDetailCommitment(null); setAdminUtr(''); setCommitmentHistory([]); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-4)' }}>
               <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Commitment details</h3>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setDetailCommitment(null); setAdminUtr(''); }} aria-label="Close">✕</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setDetailCommitment(null); setAdminUtr(''); setCommitmentHistory([]); }} aria-label="Close">✕</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
               <div><span style={{ color: 'var(--text-muted)' }}>ID</span><br /><code style={{ fontSize: 'var(--text-xs)' }}>{detailCommitment.id}</code></div>
@@ -1267,7 +1303,7 @@ export default function AdminDashboard() {
               <div><span style={{ color: 'var(--text-muted)' }}>Campus</span><br />{detailCommitment.campuses?.name}{detailCommitment.campuses?.district ? `, ${detailCommitment.campuses.district}` : ''}</div>
               <div><span style={{ color: 'var(--text-muted)' }}>Status</span><br /><span className={`status-badge status-${detailCommitment.status}`}>{detailCommitment.status.replace(/_/g, ' ')}</span></div>
               <div><span style={{ color: 'var(--text-muted)' }}>Committed at</span><br />{new Date(detailCommitment.committed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
-              <div><span style={{ color: 'var(--text-muted)' }}>UTR</span><br />{detailCommitment.utr_number ? <code>{detailCommitment.utr_number}</code> : '—'}</div>
+              <div><span style={{ color: 'var(--text-muted)' }}>UTR</span><br />{detailCommitment.utr_number ? <code>{detailCommitment.utr_number}</code> : '-'}</div>
               {detailCommitment.utr_submitted_at && <div><span style={{ color: 'var(--text-muted)' }}>UTR submitted at</span><br />{new Date(detailCommitment.utr_submitted_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>}
               {detailCommitment.verified_at && <div><span style={{ color: 'var(--text-muted)' }}>Verified at</span><br />{new Date(detailCommitment.verified_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>}
               {detailCommitment.rejection_reason && <div><span style={{ color: 'var(--text-muted)' }}>Rejection reason</span><br /><span style={{ color: 'var(--accent-red)' }}>{detailCommitment.rejection_reason}</span></div>}
@@ -1278,6 +1314,55 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+            {/* Activity timeline */}
+            <div style={{ marginTop: 'var(--space-5)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
+                Activity log
+              </div>
+              {historyLoading ? (
+                <div className="skeleton" style={{ height: '60px', borderRadius: '8px' }} />
+              ) : commitmentHistory.length === 0 ? (
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>No activity recorded yet.</p>
+              ) : (
+                <div className="commitment-timeline">
+                  {commitmentHistory.map((entry, i) => {
+                    const isReject = entry.action === 'REJECT_COMMITMENT';
+                    const isVerify = entry.action === 'VERIFY_COMMITMENT';
+                    const isResubmit = entry.action === 'RESUBMIT_UTR';
+                    const isSubmit = entry.action === 'SUBMIT_UTR';
+                    const icon = isVerify ? '✅' : isReject ? '❌' : isResubmit ? '🔄' : isSubmit ? '📤' : '📝';
+                    const color = isVerify ? '#059669' : isReject ? '#dc2626' : isResubmit ? '#2563eb' : '#6b7280';
+                    const label = isVerify ? 'Verified' : isReject ? 'Rejected' : isResubmit ? 'UTR resubmitted' : isSubmit ? 'UTR submitted' : entry.action.replace(/_/g, ' ');
+                    return (
+                      <div key={entry.id ?? i} className="commitment-timeline-item">
+                        <div className="commitment-timeline-dot" style={{ background: color }}>
+                          <span style={{ fontSize: '10px' }}>{icon}</span>
+                        </div>
+                        <div className="commitment-timeline-body">
+                          <div style={{ fontWeight: 600, fontSize: '13px', color }}>
+                            {label}
+                          </div>
+                          {entry.reason && (
+                            <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '2px' }}>
+                              Reason: {entry.reason}
+                            </div>
+                          )}
+                          {isResubmit && entry.after_json?.utr_number && (
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                              New UTR: <code style={{ fontSize: '11px' }}>{String(entry.after_json.utr_number)}</code>
+                            </div>
+                          )}
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
+                            {new Date(entry.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Admin set UTR when no UTR and status allows resubmit */}
             {(detailCommitment.status === 'COMMITTED' || detailCommitment.status === 'REJECTED') && !detailCommitment.utr_number && (
               <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-color)' }}>
