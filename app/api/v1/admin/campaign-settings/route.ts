@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Immediately bust the Next.js cache for public pages that render bank/campaign details
-    revalidateTag('campaign-settings');
+    revalidateTag('campaign-settings', 'default');
     revalidatePath('/', 'layout');
 
     return NextResponse.json({ ok: true });
