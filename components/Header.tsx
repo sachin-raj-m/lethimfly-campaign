@@ -49,6 +49,8 @@ export default function Header() {
 
   const handleLogout = () => {
     const supabase = createClient();
+    // Signal to SessionWatcher that this is a manual logout (not expiry)
+    if (typeof window !== 'undefined') sessionStorage.setItem('manual_signout', '1');
     supabase.auth.signOut();
     setMobileOpen(false);
   };

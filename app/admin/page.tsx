@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -129,6 +130,8 @@ export default function AdminDashboard() {
       setAuthed(false);
       setSessionUser(null);
       setIsAdminBySession(null);
+      // 401 from API means token became invalid (session expiry)
+      setSessionExpired(true);
     }
   }, []);
 
@@ -236,9 +239,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     let cancelled = false;
+    const supabase = createClient();
+
+    // Initial session check
     (async () => {
       if (typeof window !== 'undefined') localStorage.removeItem('admin_key');
-      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelled) return;
       if (session?.user?.email) {
@@ -252,6 +257,7 @@ export default function AdminDashboard() {
           if (typeof window !== 'undefined') sessionStorage.setItem('admin_token', session.access_token);
           setAuthed(true);
           setIsAdminBySession(true);
+          setSessionExpired(false);
         } else {
           setIsAdminBySession(false);
         }
@@ -261,7 +267,36 @@ export default function AdminDashboard() {
       }
       setAuthCheckDone(true);
     })();
-    return () => { cancelled = true; };
+
+    // Listen for ongoing auth state changes while admin is active
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+
+      if (event === 'TOKEN_REFRESHED' && session?.access_token) {
+        // Silently update the stored token so API calls keep working
+        if (typeof window !== 'undefined') sessionStorage.setItem('admin_token', session.access_token);
+        return;
+      }
+
+      if (event === 'SIGNED_OUT') {
+        const isManual = typeof window !== 'undefined' && sessionStorage.getItem('manual_signout') === '1';
+        if (typeof window !== 'undefined') sessionStorage.removeItem('manual_signout');
+        sessionStorage.removeItem('admin_token');
+        setAuthed(false);
+        setSessionUser(null);
+        setIsAdminBySession(null);
+        if (!isManual) {
+          // Session expired without user action — show re-login prompt
+          setSessionExpired(true);
+          setAuthCheckDone(true);
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleVerify = async (id: string) => {
@@ -510,10 +545,22 @@ export default function AdminDashboard() {
         className="container"
         style={{ paddingTop: 'var(--space-16)', maxWidth: '440px', textAlign: 'center' }}
       >
-        <h1 className="section-title">Admin Login</h1>
-        <p className="section-subtitle">
-          Sign in with Google to access the admin dashboard
-        </p>
+        {sessionExpired ? (
+          <div className="admin-session-expired-notice">
+            <div className="admin-session-expired-icon">🔒</div>
+            <h1 className="section-title" style={{ marginBottom: 'var(--space-2)' }}>Session expired</h1>
+            <p className="section-subtitle">
+              Your session has timed out. Please sign in again to continue.
+            </p>
+          </div>
+        ) : (
+          <>
+            <h1 className="section-title">Admin Login</h1>
+            <p className="section-subtitle">
+              Sign in with Google to access the admin dashboard
+            </p>
+          </>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
           <button
@@ -592,10 +639,14 @@ export default function AdminDashboard() {
             type="button"
             className="admin-nav-item admin-nav-action"
             onClick={() => {
+              sessionStorage.setItem('manual_signout', '1');
               sessionStorage.removeItem('admin_token');
               setAuthed(false);
               setSessionUser(null);
               setIsAdminBySession(null);
+              setSessionExpired(false);
+              const supabase = createClient();
+              supabase.auth.signOut();
             }}
           >
             <span className="admin-nav-icon" aria-hidden>↪</span>
@@ -619,10 +670,14 @@ export default function AdminDashboard() {
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => {
+                  sessionStorage.setItem('manual_signout', '1');
                   sessionStorage.removeItem('admin_token');
                   setAuthed(false);
                   setSessionUser(null);
                   setIsAdminBySession(null);
+                  setSessionExpired(false);
+                  const supabase = createClient();
+                  supabase.auth.signOut();
                 }}
               >
                 Log out
